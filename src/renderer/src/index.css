@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-deep: 10 10 15;
+  --brand-card: 22 22 31;
+  --brand-cyan: 0 242 255;
+  --brand-blue: 59 130 246;
+  --brand-purple: 139 92 246;
+  --brand-text-sec: 148 163 184;
+  --brand-text-pri: 241 245 249;
+}
+
+.light {
+  --brand-deep: 238, 248, 252;
+  --brand-card: 255 255 255;
+  --brand-cyan: 0 180 200;
+  --brand-blue: 37 99 235;
+  --brand-purple: 124 58 237;
+  --brand-text-sec: 100 116 139;
+  --brand-text-pri: 15 23 42;
+}
+
+/* Glassmorphism utilities */
+@layer components {
+  .glass {
+    @apply bg-brand-card/60 backdrop-blur-xl border border-white/10 rounded-xl;
+  }
+
+  .glass-hover {
+    @apply hover:bg-brand-card/80 hover:border-brand-cyan/20 transition-all duration-300;
+  }
+
+  .neon-glow {
+    box-shadow: 0 0 20px rgb(var(--brand-cyan) / 0.15);
+  }
+
+  .neon-border {
+    @apply border border-brand-cyan/30;
+    box-shadow: 0 0 10px rgb(var(--brand-cyan) / 0.1);
+  }
+}
+
+/* Animations */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out both;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--brand-text-sec) / 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--brand-text-sec) / 0.5);
+}
+
+/* Base body */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Drag region for custom title bar */
+.drag-region {
+  -webkit-app-region: drag;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
