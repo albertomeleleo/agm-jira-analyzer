@@ -30,6 +30,12 @@ const api = {
   jiraSearchIssues: (config: JiraConfig, jql: string) =>
     ipcRenderer.invoke('jira-search-issues', config, jql),
 
+  // Last JQL
+  getLastJql: (projectName: string): Promise<string | null> =>
+    ipcRenderer.invoke('get-last-jql', projectName),
+  saveLastJql: (projectName: string, jql: string): Promise<void> =>
+    ipcRenderer.invoke('save-last-jql', projectName, jql),
+
   // SLA — import issues by JQL
   jiraImportIssues: (config: JiraConfig, jql: string, projectName: string) =>
     ipcRenderer.invoke('jira-import-issues', config, jql, projectName),

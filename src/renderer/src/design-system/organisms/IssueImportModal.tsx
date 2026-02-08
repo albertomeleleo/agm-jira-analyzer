@@ -9,12 +9,14 @@ interface IssueImportModalProps {
   open: boolean
   onClose: () => void
   onImportComplete: () => void
+  onJqlSaved?: (jql: string) => void
 }
 
 export function IssueImportModal({
   open,
   onClose,
-  onImportComplete
+  onImportComplete,
+  onJqlSaved
 }: IssueImportModalProps): JSX.Element {
   const { activeProject } = useProject()
   const [jql, setJql] = useState('')
@@ -22,12 +24,15 @@ export function IssueImportModal({
   const [error, setError] = useState('')
   const [fetchedCount, setFetchedCount] = useState(0)
 
-  // Pre-populate JQL with project key
+  // Pre-populate JQL with stored last JQL or default template
   useEffect(() => {
-    if (activeProject && !jql) {
-      setJql(`project = "${activeProject.config.jiraProjectKey}" ORDER BY created DESC`)
-    }
-  }, [activeProject, jql])
+    if (!open || !activeProject) return
+    window.api.getLastJql(activeProject.name).then((stored) => {
+      setJql(
+        stored ?? `project = "${activeProject.config.jiraProjectKey}" ORDER BY created DESC`
+      )
+    })
+  }, [open, activeProject])
 
   const handleImport = async (): Promise<void> => {
     if (!activeProject || !jql.trim()) return
@@ -36,6 +41,8 @@ export function IssueImportModal({
     try {
       const config = activeProject.config.jira
       const issues = await window.api.jiraImportIssues(config, jql, activeProject.name)
+      await window.api.saveLastJql(activeProject.name, jql)
+      onJqlSaved?.(jql)
       setFetchedCount(issues.length)
       setFetchStatus('done')
       onImportComplete()

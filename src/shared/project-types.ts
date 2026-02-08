@@ -28,6 +28,7 @@ export interface AppSettings {
   storageRoot: string
   theme: 'light' | 'dark'
   lastOpenedProject?: string
+  autoRefreshInterval: number
 }
 
 export const DEFAULT_SLA_GROUPS: SLAGroup[] = [

@@ -6,7 +6,8 @@ import type { AppSettings } from '../../shared/project-types'
 
 const DEFAULT_SETTINGS: AppSettings = {
   storageRoot: '',
-  theme: 'dark'
+  theme: 'dark',
+  autoRefreshInterval: 5
 }
 
 export class StorageService {
@@ -23,7 +24,8 @@ export class StorageService {
     return {
       storageRoot: this.store.get('storageRoot', ''),
       theme: this.store.get('theme', 'dark'),
-      lastOpenedProject: this.store.get('lastOpenedProject')
+      lastOpenedProject: this.store.get('lastOpenedProject'),
+      autoRefreshInterval: this.store.get('autoRefreshInterval', 5)
     }
   }
 
@@ -32,6 +34,8 @@ export class StorageService {
     if (partial.theme !== undefined) this.store.set('theme', partial.theme)
     if (partial.lastOpenedProject !== undefined)
       this.store.set('lastOpenedProject', partial.lastOpenedProject)
+    if (partial.autoRefreshInterval !== undefined)
+      this.store.set('autoRefreshInterval', partial.autoRefreshInterval)
     return this.getSettings()
   }
 

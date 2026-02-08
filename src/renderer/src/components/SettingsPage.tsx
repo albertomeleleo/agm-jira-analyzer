@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react'
 import { Save, FolderOpen } from 'lucide-react'
 import { Button, Input, Card, H2, H3, FormGroup } from '@design-system'
 import { useProject } from '../contexts/ProjectContext'
+import { useRefresh } from '../contexts/RefreshContext'
 import type { AppSettings } from '../../../shared/project-types'
 
 export function SettingsPage(): JSX.Element {
   const { activeProject, refreshProjects } = useProject()
+  const { autoRefreshInterval, setAutoRefreshInterval } = useRefresh()
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [jiraHost, setJiraHost] = useState('')
   const [jiraEmail, setJiraEmail] = useState('')
@@ -76,6 +78,22 @@ export function SettingsPage(): JSX.Element {
             Change
           </Button>
         </div>
+      </Card>
+
+      {/* Dashboard Settings */}
+      <Card>
+        <H3 className="mb-4">Dashboard</H3>
+        <FormGroup label="Auto-refresh interval (minutes)">
+          <Input
+            type="number"
+            value={autoRefreshInterval}
+            onChange={(e) => setAutoRefreshInterval(Number(e.target.value))}
+            min={0}
+          />
+          <p className="text-xs text-brand-text-sec mt-2">
+            Set to 0 to disable auto-refresh.
+          </p>
+        </FormGroup>
       </Card>
 
       {/* Jira config */}

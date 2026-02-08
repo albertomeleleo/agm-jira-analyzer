@@ -159,6 +159,9 @@ Run with: `npm run test`
 - localStorage (filter state), project JSON files on disk (presets via ProjectService) (002-sla-dashboard-filters)
 - TypeScript 5.3 (strict, no `any`) + React 18, Electron 28, TailwindCSS 3.4, Lucide React, date-fns 4 (002-sla-dashboard-filters)
 - localStorage (active filter state per page), JSON files via ProjectService (presets) (002-sla-dashboard-filters)
+- TypeScript 5.3 (strict, no `any`) + Electron 28, React 18, Vite 5, TailwindCSS 3.4, Lucide Reac (004-sla-sync-button)
+- File system via `electron-store` + JSON files in `<storage-root>/<ProjectName>/` (004-sla-sync-button)
+- Project JSON files via electron-store (no changes) (005-sync-never-disable)
 
 ## Recent Changes
 - 002-sla-dashboard-filters: Added TypeScript 5.3, React 18, Node.js (Electron 28 Main Process) + React 18, TailwindCSS 3.4, Lucide React (icons), electron-store 6

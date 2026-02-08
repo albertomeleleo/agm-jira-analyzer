@@ -139,6 +139,15 @@ function registerIpcHandlers(): void {
     return jiraService.getIssuesByJQL(jql)
   })
 
+  // -- Last JQL --
+  ipcMain.handle('get-last-jql', (_event, projectName: string) => {
+    return projectService.getLastJql(projectName)
+  })
+
+  ipcMain.handle('save-last-jql', (_event, projectName: string, jql: string) => {
+    projectService.saveLastJql(projectName, jql)
+  })
+
   // -- SLA Issues --
   ipcMain.handle('get-sla-issues', (_event, projectName: string) => {
     return projectService.getSLAIssues(projectName)
