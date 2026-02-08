@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   LayoutDashboard,
+  Table,
   Package,
   Settings,
   HelpCircle,
@@ -13,7 +14,7 @@ import { ThemeToggle } from '../atoms/ThemeToggle'
 import { useProject } from '../../contexts/ProjectContext'
 import logoSrc from '../../assets/logo.png'
 
-export type NavPage = 'dashboard' | 'releases' | 'settings' | 'help'
+export type NavPage = 'dashboard' | 'issues' | 'releases' | 'settings' | 'help'
 
 interface SidebarProps {
   currentPage: NavPage
@@ -28,6 +29,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'dashboard', label: 'SLA Dashboard', icon: LayoutDashboard },
+  { id: 'issues', label: 'Issue List', icon: Table },
   { id: 'releases', label: 'Releases', icon: Package },
   { id: 'settings', label: 'Settings', icon: Settings },
   { id: 'help', label: 'Help', icon: HelpCircle }

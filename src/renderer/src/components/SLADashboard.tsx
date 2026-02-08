@@ -15,12 +15,12 @@ import {
   SLACharts,
   IssueImportModal,
   SLAFilters,
-  DEFAULT_FILTER_STATE
+  FilterPresetBar
 } from '@design-system'
-import type { SLAFilterState } from '@design-system'
 import { useProject } from '../contexts/ProjectContext'
+import { useFilter } from '../contexts/FilterContext'
+import { applyFilters } from '../../../shared/filter-utils'
 import type { SLAReport, SLAIssue, SLASummary, SLAPrioritySummary } from '../../../shared/sla-types'
-import { parseISO, format } from 'date-fns'
 
 function computeSummary(issues: SLAIssue[]): SLASummary {
   const totalIssues = issues.length
@@ -39,18 +39,14 @@ function computeSummary(issues: SLAIssue[]): SLASummary {
   > = {}
 
   for (const issue of issues) {
-    // Reaction
     if (issue.reactionSLAMet === true) reactionMet++
     else if (issue.reactionSLAMet === false) reactionMissed++
 
-    // Resolution
     if (issue.resolutionSLAMet === true) resolutionMet++
     else if (issue.resolutionSLAMet === false) resolutionMissed++
 
-    // By type
     byType[issue.issueType] = (byType[issue.issueType] ?? 0) + 1
 
-    // By priority
     if (!byPriorityAccum[issue.priority]) {
       byPriorityAccum[issue.priority] = {
         total: 0,
@@ -103,74 +99,22 @@ function computeSummary(issues: SLAIssue[]): SLASummary {
   }
 }
 
-function applyFilters(issues: SLAIssue[], filters: SLAFilterState): SLAIssue[] {
-  return issues.filter((issue) => {
-    // Issue type filter
-    if (filters.issueTypes.size > 0 && !filters.issueTypes.has(issue.issueType)) {
-      return false
-    }
-
-    // Priority filter
-    if (filters.priorities.size > 0 && !filters.priorities.has(issue.priority)) {
-      return false
-    }
-
-    // Status filter
-    if (filters.statuses.size > 0) {
-      const isOpen = issue.resolved === null
-      const matchesOpen = filters.statuses.has('open') && isOpen
-      const matchesResolved = filters.statuses.has('resolved') && !isOpen
-      if (!matchesOpen && !matchesResolved) return false
-    }
-
-    // Date filter
-    if (filters.dateMode === 'month' && filters.month) {
-      const issueMonth = format(parseISO(issue.created), 'yyyy-MM')
-      if (issueMonth !== filters.month) return false
-    }
-
-    if (filters.dateMode === 'range') {
-      const created = issue.created.slice(0, 10) // "YYYY-MM-DD"
-      if (filters.dateFrom && created < filters.dateFrom) return false
-      if (filters.dateTo && created > filters.dateTo) return false
-    }
-
-    return true
-  })
-}
-
-// --- Persistence Helpers ---
-const serializeFilters = (f: SLAFilterState): string => {
-  return JSON.stringify({
-    ...f,
-    issueTypes: Array.from(f.issueTypes),
-    priorities: Array.from(f.priorities),
-    statuses: Array.from(f.statuses)
-  })
-}
-
-const deserializeFilters = (json: string): SLAFilterState => {
-  try {
-    const parsed = JSON.parse(json)
-    return {
-      ...parsed,
-      issueTypes: new Set(parsed.issueTypes),
-      priorities: new Set(parsed.priorities),
-      statuses: new Set(parsed.statuses)
-    }
-  } catch (e) {
-    console.error('Failed to parse saved filters', e)
-    return DEFAULT_FILTER_STATE
-  }
-}
-
 export function SLADashboard(): JSX.Element {
   const { activeProject } = useProject()
+  const {
+    filters,
+    setFilters,
+    resetFilters,
+    presets,
+    savePreset,
+    deletePreset,
+    updatePreset,
+    loadPreset
+  } = useFilter()
   const [report, setReport] = useState<SLAReport | null>(null)
   const [issueCount, setIssueCount] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
-  const [filters, setFilters] = useState<SLAFilterState>(DEFAULT_FILTER_STATE)
 
   const loadData = useCallback(async () => {
     if (!activeProject) return
@@ -183,25 +127,6 @@ export function SLADashboard(): JSX.Element {
   useEffect(() => {
     loadData()
   }, [loadData])
-
-  // Load saved filters when project changes
-  useEffect(() => {
-    if (!activeProject) return
-    const key = `sla_filters_${activeProject.name}`
-    const saved = localStorage.getItem(key)
-    if (saved) {
-      setFilters(deserializeFilters(saved))
-    } else {
-      setFilters(DEFAULT_FILTER_STATE)
-    }
-  }, [activeProject?.name])
-
-  // Save filters when they change
-  useEffect(() => {
-    if (!activeProject) return
-    const key = `sla_filters_${activeProject.name}`
-    localStorage.setItem(key, serializeFilters(filters))
-  }, [filters, activeProject?.name])
 
   const filteredIssues = useMemo(() => {
     if (!report) return []
@@ -224,7 +149,6 @@ export function SLADashboard(): JSX.Element {
   const handleGenerateReport = async (): Promise<void> => {
     if (!activeProject) return
     setLoading(true)
-    console.log('[Dashboard] Generating report with config:', activeProject.config)
     try {
       const result = await window.api.generateSLAReport(
         activeProject.name,
@@ -289,8 +213,23 @@ export function SLADashboard(): JSX.Element {
 
       {report ? (
         <>
+          {/* Filter Presets */}
+          <FilterPresetBar
+            presets={presets}
+            onLoad={loadPreset}
+            onSave={savePreset}
+            onDelete={deletePreset}
+            onUpdate={updatePreset}
+            currentFilters={filters}
+          />
+
           {/* Filters */}
-          <SLAFilters issues={report.issues} filters={filters} onChange={setFilters} />
+          <SLAFilters
+            issues={report.issues}
+            filters={filters}
+            onChange={setFilters}
+            onReset={resetFilters}
+          />
 
           {/* Filtered count indicator */}
           {isFiltered && (

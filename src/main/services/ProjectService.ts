@@ -1,8 +1,10 @@
 import * as path from 'path'
+import { randomUUID } from 'crypto'
 import { storageService } from './StorageService'
 import type { Project, ProjectConfig } from '../../shared/project-types'
 import type { SLAReport } from '../../shared/sla-types'
 import type { JiraIssue, JiraVersion } from '../../shared/jira-types'
+import type { FilterPresetCollection, SerializedFilterState } from '../../shared/filter-types'
 
 export interface ReleaseEntry {
   version: JiraVersion
@@ -134,6 +136,106 @@ export class ProjectService {
     const data = this.getReleasesData(projectName)
     data.releases = data.releases.filter((r) => r.version.id !== versionId)
     storageService.writeJsonFile(this.getReleasesPath(projectName), data)
+  }
+
+  // --- Filter Presets ---
+
+  private getFilterPresetsPath(projectName: string): string {
+    return path.join(this.getProjectDir(projectName), 'filter-presets.json')
+  }
+
+  getFilterPresets(projectName: string): FilterPresetCollection {
+    const data = storageService.readJsonFile<FilterPresetCollection>(
+      this.getFilterPresetsPath(projectName)
+    )
+    return data ?? { presets: [] }
+  }
+
+  saveFilterPreset(
+    projectName: string,
+    name: string,
+    filters: SerializedFilterState
+  ): FilterPresetCollection {
+    const trimmedName = name.trim()
+    if (!trimmedName) throw new Error('Preset name cannot be empty')
+    if (trimmedName.length > 50) throw new Error('Preset name must be 50 characters or less')
+
+    const data = this.getFilterPresets(projectName)
+    if (data.presets.length >= 20) throw new Error('Maximum of 20 presets per project reached')
+
+    const duplicate = data.presets.find(
+      (p) => p.name.toLowerCase() === trimmedName.toLowerCase()
+    )
+    if (duplicate) throw new Error(`A preset named "${trimmedName}" already exists`)
+
+    const now = new Date().toISOString()
+    data.presets.push({
+      id: randomUUID(),
+      name: trimmedName,
+      filters,
+      createdAt: now,
+      updatedAt: now
+    })
+
+    storageService.writeJsonFile(this.getFilterPresetsPath(projectName), data)
+    return data
+  }
+
+  updateFilterPreset(
+    projectName: string,
+    presetId: string,
+    updates: { name?: string; filters?: SerializedFilterState }
+  ): FilterPresetCollection {
+    const data = this.getFilterPresets(projectName)
+    const preset = data.presets.find((p) => p.id === presetId)
+    if (!preset) throw new Error(`Preset not found: ${presetId}`)
+
+    if (updates.name !== undefined) {
+      const trimmedName = updates.name.trim()
+      if (!trimmedName) throw new Error('Preset name cannot be empty')
+      if (trimmedName.length > 50) throw new Error('Preset name must be 50 characters or less')
+
+      const duplicate = data.presets.find(
+        (p) => p.id !== presetId && p.name.toLowerCase() === trimmedName.toLowerCase()
+      )
+      if (duplicate) throw new Error(`A preset named "${trimmedName}" already exists`)
+      preset.name = trimmedName
+    }
+
+    if (updates.filters !== undefined) {
+      preset.filters = updates.filters
+    }
+
+    preset.updatedAt = new Date().toISOString()
+    storageService.writeJsonFile(this.getFilterPresetsPath(projectName), data)
+    return data
+  }
+
+  deleteFilterPreset(projectName: string, presetId: string): FilterPresetCollection {
+    const data = this.getFilterPresets(projectName)
+    const idx = data.presets.findIndex((p) => p.id === presetId)
+    if (idx === -1) throw new Error(`Preset not found: ${presetId}`)
+
+    data.presets.splice(idx, 1)
+    storageService.writeJsonFile(this.getFilterPresetsPath(projectName), data)
+    return data
+  }
+
+  reorderFilterPresets(projectName: string, presetIds: string[]): FilterPresetCollection {
+    const data = this.getFilterPresets(projectName)
+    if (presetIds.length !== data.presets.length) {
+      throw new Error('Preset IDs array length does not match existing presets count')
+    }
+
+    const reordered = presetIds.map((id) => {
+      const preset = data.presets.find((p) => p.id === id)
+      if (!preset) throw new Error(`Preset not found: ${id}`)
+      return preset
+    })
+
+    data.presets = reordered
+    storageService.writeJsonFile(this.getFilterPresetsPath(projectName), data)
+    return data
   }
 
   // --- Logo ---

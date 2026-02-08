@@ -7,6 +7,7 @@ import { projectService } from './services/ProjectService'
 import { generateSLAReport } from './sla-parser'
 import type { JiraConfig } from '../shared/jira-types'
 import type { ProjectConfig, AppSettings } from '../shared/project-types'
+import type { SerializedFilterState } from '../shared/filter-types'
 
 function createWindow(): BrowserWindow {
   const mainWindow = new BrowserWindow({
@@ -166,6 +167,44 @@ function registerIpcHandlers(): void {
   ipcMain.handle('delete-release', (_event, projectName: string, versionId: string) => {
     projectService.deleteRelease(projectName, versionId)
   })
+
+  // -- Filter Presets --
+  ipcMain.handle('get-filter-presets', (_event, projectName: string) => {
+    return projectService.getFilterPresets(projectName)
+  })
+
+  ipcMain.handle(
+    'save-filter-preset',
+    (_event, projectName: string, name: string, filters: SerializedFilterState) => {
+      return projectService.saveFilterPreset(projectName, name, filters)
+    }
+  )
+
+  ipcMain.handle(
+    'update-filter-preset',
+    (
+      _event,
+      projectName: string,
+      presetId: string,
+      updates: { name?: string; filters?: SerializedFilterState }
+    ) => {
+      return projectService.updateFilterPreset(projectName, presetId, updates)
+    }
+  )
+
+  ipcMain.handle(
+    'delete-filter-preset',
+    (_event, projectName: string, presetId: string) => {
+      return projectService.deleteFilterPreset(projectName, presetId)
+    }
+  )
+
+  ipcMain.handle(
+    'reorder-filter-presets',
+    (_event, projectName: string, presetIds: string[]) => {
+      return projectService.reorderFilterPresets(projectName, presetIds)
+    }
+  )
 
   // -- Storage/Files --
   ipcMain.handle('read-json-file', (_event, filePath: string) => {

@@ -153,3 +153,12 @@ Run with: `npm run test`
 - **IPC delegation** — `main/index.ts` handlers delegate to services, never contain business logic inline
 - **Singleton services** — JiraService, StorageService, ProjectService follow singleton-like pattern
 - **Theme** via React Context (`ThemeContext`) + TailwindCSS `darkMode: 'class'`
+
+## Active Technologies
+- TypeScript 5.3, React 18, Node.js (Electron 28 Main Process) + React 18, TailwindCSS 3.4, Lucide React (icons), electron-store 6 (002-sla-dashboard-filters)
+- localStorage (filter state), project JSON files on disk (presets via ProjectService) (002-sla-dashboard-filters)
+- TypeScript 5.3 (strict, no `any`) + React 18, Electron 28, TailwindCSS 3.4, Lucide React, date-fns 4 (002-sla-dashboard-filters)
+- localStorage (active filter state per page), JSON files via ProjectService (presets) (002-sla-dashboard-filters)
+
+## Recent Changes
+- 002-sla-dashboard-filters: Added TypeScript 5.3, React 18, Node.js (Electron 28 Main Process) + React 18, TailwindCSS 3.4, Lucide React (icons), electron-store 6

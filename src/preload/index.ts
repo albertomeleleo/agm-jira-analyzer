@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { JiraConfig, JiraVersion } from '../shared/jira-types'
 import type { ProjectConfig, AppSettings, SLAGroup } from '../shared/project-types'
+import type { SerializedFilterState, FilterPresetCollection } from '../shared/filter-types'
 
 const api = {
   // Settings
@@ -43,6 +44,29 @@ const api = {
   getReleases: (projectName: string) => ipcRenderer.invoke('get-releases', projectName),
   deleteRelease: (projectName: string, versionId: string) =>
     ipcRenderer.invoke('delete-release', projectName, versionId),
+
+  // Filter Presets
+  getFilterPresets: (projectName: string): Promise<FilterPresetCollection> =>
+    ipcRenderer.invoke('get-filter-presets', projectName),
+  saveFilterPreset: (
+    projectName: string,
+    name: string,
+    filters: SerializedFilterState
+  ): Promise<FilterPresetCollection> =>
+    ipcRenderer.invoke('save-filter-preset', projectName, name, filters),
+  updateFilterPreset: (
+    projectName: string,
+    presetId: string,
+    updates: { name?: string; filters?: SerializedFilterState }
+  ): Promise<FilterPresetCollection> =>
+    ipcRenderer.invoke('update-filter-preset', projectName, presetId, updates),
+  deleteFilterPreset: (projectName: string, presetId: string): Promise<FilterPresetCollection> =>
+    ipcRenderer.invoke('delete-filter-preset', projectName, presetId),
+  reorderFilterPresets: (
+    projectName: string,
+    presetIds: string[]
+  ): Promise<FilterPresetCollection> =>
+    ipcRenderer.invoke('reorder-filter-presets', projectName, presetIds),
 
   // Storage
   readJsonFile: (filePath: string) => ipcRenderer.invoke('read-json-file', filePath),

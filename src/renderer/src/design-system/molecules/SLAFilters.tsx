@@ -1,7 +1,10 @@
 import { useMemo } from 'react'
 import { format, parseISO } from 'date-fns'
+import { RotateCcw } from 'lucide-react'
 import { Label } from '../atoms/Typography'
 import type { SLAIssue } from '../../../../shared/sla-types'
+import { DEFAULT_FILTER_STATE } from '../../../../shared/filter-types'
+import type { SLAFilterState } from '../../../../shared/filter-types'
 
 export const PRIORITY_TO_TIER: Record<string, string> = {
   Highest: 'Expedite',
@@ -17,30 +20,11 @@ function priorityLabel(priority: string): string {
   return tier ? `${priority} (${tier})` : priority
 }
 
-export interface SLAFilterState {
-  issueTypes: Set<string>
-  priorities: Set<string>
-  statuses: Set<string>
-  dateMode: 'all' | 'month' | 'range'
-  month: string | null
-  dateFrom: string | null
-  dateTo: string | null
-}
-
-export const DEFAULT_FILTER_STATE: SLAFilterState = {
-  issueTypes: new Set(),
-  priorities: new Set(),
-  statuses: new Set(),
-  dateMode: 'all',
-  month: null,
-  dateFrom: null,
-  dateTo: null
-}
-
 interface SLAFiltersProps {
   issues: SLAIssue[]
   filters: SLAFilterState
   onChange: (filters: SLAFilterState) => void
+  onReset?: () => void
 }
 
 function ToggleChip({
@@ -68,7 +52,7 @@ function ToggleChip({
   )
 }
 
-export function SLAFilters({ issues, filters, onChange }: SLAFiltersProps): JSX.Element {
+export function SLAFilters({ issues, filters, onChange, onReset }: SLAFiltersProps): JSX.Element {
   const uniqueTypes = useMemo(
     () => [...new Set(issues.map((i) => i.issueType))].sort(),
     [issues]
@@ -115,10 +99,41 @@ export function SLAFilters({ issues, filters, onChange }: SLAFiltersProps): JSX.
     onChange({ ...filters, dateMode: mode, month: null, dateFrom: null, dateTo: null })
   }
 
+  const isFiltered =
+    filters.issueTypes.size > 0 ||
+    filters.priorities.size > 0 ||
+    filters.statuses.size > 0 ||
+    filters.dateMode !== 'all'
+
+  const handleReset = (): void => {
+    if (onReset) {
+      onReset()
+    } else {
+      onChange(DEFAULT_FILTER_STATE)
+    }
+  }
+
   return (
-    <div className="glass p-4 space-y-3">
+    <div className="glass p-4 space-y-0">
+      {/* Header with Reset */}
+      <div className="flex items-center justify-between mb-3">
+        <Label className="text-xs uppercase tracking-wider text-brand-text-sec">Filters</Label>
+        {isFiltered && (
+          <button
+            type="button"
+            onClick={handleReset}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium
+              text-brand-text-sec hover:text-brand-cyan border border-white/10 hover:border-brand-cyan/30
+              transition-all duration-150"
+          >
+            <RotateCcw size={12} />
+            Reset
+          </button>
+        )}
+      </div>
+
       {/* Issue Type */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap py-2.5 border-b border-white/5">
         <Label className="text-xs uppercase tracking-wider w-16 shrink-0">Type</Label>
         <div className="flex gap-1.5 flex-wrap">
           {uniqueTypes.map((type) => (
@@ -133,7 +148,7 @@ export function SLAFilters({ issues, filters, onChange }: SLAFiltersProps): JSX.
       </div>
 
       {/* Priority */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap py-2.5 border-b border-white/5">
         <Label className="text-xs uppercase tracking-wider w-16 shrink-0">Priority</Label>
         <div className="flex gap-1.5 flex-wrap">
           {uniquePriorities.map((p) => (
@@ -148,7 +163,7 @@ export function SLAFilters({ issues, filters, onChange }: SLAFiltersProps): JSX.
       </div>
 
       {/* Status */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap py-2.5 border-b border-white/5">
         <Label className="text-xs uppercase tracking-wider w-16 shrink-0">Status</Label>
         <div className="flex gap-1.5 flex-wrap">
           {(['open', 'resolved'] as const).map((s) => (
@@ -163,7 +178,7 @@ export function SLAFilters({ issues, filters, onChange }: SLAFiltersProps): JSX.
       </div>
 
       {/* Date Period */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-3 flex-wrap py-2.5">
         <Label className="text-xs uppercase tracking-wider w-16 shrink-0">Period</Label>
         <div className="flex items-center gap-2 flex-wrap">
           {/* Mode toggles */}

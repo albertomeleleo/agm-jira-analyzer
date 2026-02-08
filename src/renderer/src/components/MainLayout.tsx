@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Sidebar, type NavPage } from '@design-system'
+import { FilterProvider } from '../contexts/FilterContext'
 import { SLADashboard } from './SLADashboard'
+import { IssueListPage } from './IssueListPage'
 import { ReleaseDetail } from './ReleaseDetail'
 import { SettingsPage } from './SettingsPage'
 import { HelpPage } from './HelpPage'
@@ -12,6 +14,8 @@ export function MainLayout(): JSX.Element {
     switch (currentPage) {
       case 'dashboard':
         return <SLADashboard />
+      case 'issues':
+        return <IssueListPage />
       case 'releases':
         return <ReleaseDetail />
       case 'settings':
@@ -22,9 +26,11 @@ export function MainLayout(): JSX.Element {
   }
 
   return (
-    <div className="flex h-screen bg-brand-deep">
-      <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
-      <main className="flex-1 overflow-y-auto">{renderPage()}</main>
-    </div>
+    <FilterProvider>
+      <div className="flex h-screen bg-brand-deep">
+        <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+        <main className="flex-1 overflow-y-auto">{renderPage()}</main>
+      </div>
+    </FilterProvider>
   )
 }

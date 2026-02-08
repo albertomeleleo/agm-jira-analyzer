@@ -11,8 +11,13 @@ export { Modal } from './molecules/Modal'
 export { SearchField } from './molecules/SearchField'
 export { FormGroup } from './molecules/FormGroup'
 export { StatCard } from './molecules/StatCard'
-export { SLAFilters, DEFAULT_FILTER_STATE, PRIORITY_TO_TIER } from './molecules/SLAFilters'
-export type { SLAFilterState } from './molecules/SLAFilters'
+export { SLAFilters, PRIORITY_TO_TIER } from './molecules/SLAFilters'
+export { FilterPresetBar } from './molecules/FilterPresetBar'
+export { DEFAULT_FILTER_STATE } from '../../../shared/filter-types'
+export type { SLAFilterState, SerializedFilterState, FilterPreset, FilterPresetCollection } from '../../../shared/filter-types'
+
+// Contexts
+export { FilterProvider, useFilter, usePageFilter } from '../contexts/FilterContext'
 
 // Organisms
 export { Sidebar } from './organisms/Sidebar'
