@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { format, parseISO } from 'date-fns'
-import { RotateCcw } from 'lucide-react'
+import { RotateCcw, Search } from 'lucide-react'
 import { Label } from '../atoms/Typography'
 import type { SLAIssue } from '../../../../shared/sla-types'
 import { DEFAULT_FILTER_STATE } from '../../../../shared/filter-types'
@@ -103,7 +103,9 @@ export function SLAFilters({ issues, filters, onChange, onReset }: SLAFiltersPro
     filters.issueTypes.size > 0 ||
     filters.priorities.size > 0 ||
     filters.statuses.size > 0 ||
-    filters.dateMode !== 'all'
+    filters.dateMode !== 'all' ||
+    filters.search !== '' ||
+    filters.rejectedMode !== 'include'
 
   const handleReset = (): void => {
     if (onReset) {
@@ -130,6 +132,37 @@ export function SLAFilters({ issues, filters, onChange, onReset }: SLAFiltersPro
             Reset
           </button>
         )}
+      </div>
+
+      {/* Search */}
+      <div className="flex items-center gap-3 flex-wrap py-2.5 border-b border-white/5">
+        <Label className="text-xs uppercase tracking-wider w-16 shrink-0">Search</Label>
+        <div className="relative flex-1 min-w-[160px] max-w-xs">
+          <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-brand-text-sec pointer-events-none" />
+          <input
+            type="text"
+            value={filters.search}
+            onChange={(e) => onChange({ ...filters, search: e.target.value })}
+            placeholder="Key or summary…"
+            className="w-full pl-7 pr-2.5 py-1 rounded-md text-xs bg-brand-card/80 border border-white/10 text-brand-text-pri
+              placeholder:text-brand-text-sec focus:outline-none focus:border-brand-cyan/40"
+          />
+        </div>
+      </div>
+
+      {/* Rejected */}
+      <div className="flex items-center gap-3 flex-wrap py-2.5 border-b border-white/5">
+        <Label className="text-xs uppercase tracking-wider w-16 shrink-0">Rejected</Label>
+        <div className="flex gap-1.5 flex-wrap">
+          {(['include', 'exclude', 'only'] as const).map((mode) => (
+            <ToggleChip
+              key={mode}
+              label={mode === 'include' ? 'Include' : mode === 'exclude' ? 'Exclude' : 'Only'}
+              active={filters.rejectedMode === mode}
+              onClick={() => onChange({ ...filters, rejectedMode: mode })}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Issue Type */}

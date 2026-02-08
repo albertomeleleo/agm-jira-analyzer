@@ -30,6 +30,19 @@ export function applyFilters(issues: SLAIssue[], filters: SLAFilterState): SLAIs
       if (filters.dateTo && created > filters.dateTo) return false
     }
 
+    if (filters.search) {
+      const term = filters.search.toLowerCase()
+      if (!issue.key.toLowerCase().includes(term) && !issue.summary.toLowerCase().includes(term)) {
+        return false
+      }
+    }
+
+    if (filters.rejectedMode === 'exclude') {
+      if (issue.status.toLowerCase().includes('reject')) return false
+    } else if (filters.rejectedMode === 'only') {
+      if (!issue.status.toLowerCase().includes('reject')) return false
+    }
+
     return true
   })
 }

@@ -129,49 +129,57 @@ export function SLACharts({ metrics, className = '' }: SLAChartsProps): JSX.Elem
       {/* US5 — Bugs/Service Requests vs Rejected Issues pie */}
       <Card>
         <H3 className="mb-4">Bugs / Service Requests vs Rejected</H3>
-        <ResponsiveContainer width="100%" height={250}>
-          <PieChart>
-            <Pie
-              data={metrics.issueTypeDistribution}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={90}
-              paddingAngle={4}
-              dataKey="value"
-              label={({ name, percent }) => `${name}: ${Math.round((percent ?? 0) * 100)}%`}
-            >
-              {metrics.issueTypeDistribution.map((_, index) => (
-                <Cell key={`cell-type-${index}`} fill={PIE_PALETTE[index % PIE_PALETTE.length]} />
-              ))}
-            </Pie>
-            <Tooltip contentStyle={tooltipStyle} />
-          </PieChart>
-        </ResponsiveContainer>
+        {metrics.issueTypeDistribution.length > 0 ? (
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={metrics.issueTypeDistribution}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={90}
+                paddingAngle={4}
+                dataKey="value"
+                label={({ name, percent }) => `${name}: ${Math.round((percent ?? 0) * 100)}%`}
+              >
+                {metrics.issueTypeDistribution.map((_, index) => (
+                  <Cell key={`cell-type-${index}`} fill={PIE_PALETTE[index % PIE_PALETTE.length]} />
+                ))}
+              </Pie>
+              <Tooltip contentStyle={tooltipStyle} />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-[250px] text-brand-text-sec text-sm">No Data</div>
+        )}
       </Card>
 
       {/* US6 — Priority Distribution pie */}
       <Card>
         <H3 className="mb-4">Priority Distribution</H3>
-        <ResponsiveContainer width="100%" height={250}>
-          <PieChart>
-            <Pie
-              data={metrics.priorityDistribution}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={90}
-              paddingAngle={4}
-              dataKey="value"
-              label={({ name, percent }) => `${name}: ${Math.round((percent ?? 0) * 100)}%`}
-            >
-              {metrics.priorityDistribution.map((_, index) => (
-                <Cell key={`cell-prio-${index}`} fill={PIE_PALETTE[index % PIE_PALETTE.length]} />
-              ))}
-            </Pie>
-            <Tooltip contentStyle={tooltipStyle} />
-          </PieChart>
-        </ResponsiveContainer>
+        {metrics.priorityDistribution.length > 0 ? (
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={metrics.priorityDistribution}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={90}
+                paddingAngle={4}
+                dataKey="value"
+                label={({ name, percent }) => `${name}: ${Math.round((percent ?? 0) * 100)}%`}
+              >
+                {metrics.priorityDistribution.map((_, index) => (
+                  <Cell key={`cell-prio-${index}`} fill={PIE_PALETTE[index % PIE_PALETTE.length]} />
+                ))}
+              </Pie>
+              <Tooltip contentStyle={tooltipStyle} />
+            </PieChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-[250px] text-brand-text-sec text-sm">No Data</div>
+        )}
       </Card>
     </div>
   )

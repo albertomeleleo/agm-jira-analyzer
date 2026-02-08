@@ -1,98 +1,68 @@
-# Implementation Plan: [FEATURE]
+# Implementation Plan: SLA Dashboard Filters
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
-
-**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
+**Branch**: `007-sla-dashboard-filters` | **Date**: 2026-02-08 | **Spec**: [specs/007-sla-dashboard-filters/spec.md](spec.md)
+**Input**: Feature specification from `/specs/007-sla-dashboard-filters/spec.md`
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Enable interactive filtering on the SLA Dashboard by subscribing to the application's shared `FilterContext`. The feature introduces free-text search (summary/key) and a "Rejected" status toggle. To ensure high performance (< 2s updates), metric aggregation logic will be moved to the `shared` layer, allowing the dashboard to recalculate charts client-side whenever filters change.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
-
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: TypeScript 5.x  
+**Primary Dependencies**: React 18, Electron, Vite, TailwindCSS, Recharts, Lucide-React, Date-fns  
+**Storage**: LocalStorage (Filter persistence) & Local File System (Jira data cache)  
+**Testing**: Vitest (Unit & Component tests)  
+**Target Platform**: Electron (Desktop)
+**Project Type**: Single project (Electron with React frontend)  
+**Performance Goals**: UI update < 2s for datasets up to 10,000 issues (SC-001)  
+**Constraints**: Zero-dependency on live Jira connection for filtering (must work on cached data)  
+**Scale/Scope**: 1 dashboard, 1 shared filter context, 10k issues limit
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- **Library-First**: N/A (Internal feature development)
+- **CLI Interface**: N/A (GUI-focused feature)
+- **Test-First (NON-NEGOTIABLE)**: PASS. New shared logic (`calculateSlaMetrics`, `applyFilters`) will be TDD'd.
+- **Integration Testing**: PASS. Focus on `FilterContext` -> `SLADashboard` reactivity.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
-├── plan.md              # This file (/speckit.plan command output)
-├── research.md          # Phase 0 output (/speckit.plan command)
-├── data-model.md        # Phase 1 output (/speckit.plan command)
-├── quickstart.md        # Phase 1 output (/speckit.plan command)
-├── contracts/           # Phase 1 output (/speckit.plan command)
-└── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
+specs/007-sla-dashboard-filters/
+├── plan.md              # This file
+├── research.md          # Phase 0 output
+├── data-model.md        # Phase 1 output
+├── quickstart.md        # Phase 1 output
+├── contracts/           # Phase 1 output (IPC/Shared types)
+│   └── ipc-channels.md
+└── tasks.md             # Phase 2 output (created by /speckit.tasks)
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
 src/
-├── models/
-├── services/
-├── cli/
-└── lib/
-
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+├── main/                # Main process (Electron)
+│   └── services/        # SlaMetricsService (will use shared logic)
+├── renderer/            # Renderer process (React)
+│   ├── src/
+│   │   ├── components/  # SLADashboard.tsx (refactored)
+│   │   ├── contexts/    # FilterContext.tsx (extended)
+│   │   └── design-system/
+│   │       └── molecules/ # SLAFilters.tsx (UI updates)
+└── shared/              # Shared logic (Main + Renderer)
+    ├── filter-types.ts  # Filter state extension
+    ├── filter-utils.ts  # Filtering logic extension
+    ├── sla-types.ts     # SLA data types
+    └── sla-calculations.ts # NEW: Metric aggregation logic
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Single project structure using `shared/` for cross-process logic. This enables the frontend to calculate metrics for immediate feedback while allowing the backend to use the same logic for background reporting.
 
 ## Complexity Tracking
 
@@ -100,5 +70,4 @@ directories captured above]
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+| Client-side calculation | Performance (SC-001) | IPC roundtrips for every keystroke/toggle are too slow. |

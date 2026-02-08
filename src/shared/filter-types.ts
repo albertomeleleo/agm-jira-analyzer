@@ -7,6 +7,8 @@ export interface SerializedFilterState {
   month: string | null
   dateFrom: string | null
   dateTo: string | null
+  search: string
+  rejectedMode: 'include' | 'exclude' | 'only'
 }
 
 /** In-memory filter state with Set-based multi-select fields */
@@ -18,6 +20,8 @@ export interface SLAFilterState {
   month: string | null
   dateFrom: string | null
   dateTo: string | null
+  search: string
+  rejectedMode: 'include' | 'exclude' | 'only'
 }
 
 export const DEFAULT_FILTER_STATE: SLAFilterState = {
@@ -27,7 +31,9 @@ export const DEFAULT_FILTER_STATE: SLAFilterState = {
   dateMode: 'all',
   month: null,
   dateFrom: null,
-  dateTo: null
+  dateTo: null,
+  search: '',
+  rejectedMode: 'include'
 }
 
 /** A saved filter preset */
@@ -53,7 +59,9 @@ export function serializeFilterState(f: SLAFilterState): SerializedFilterState {
     dateMode: f.dateMode,
     month: f.month,
     dateFrom: f.dateFrom,
-    dateTo: f.dateTo
+    dateTo: f.dateTo,
+    search: f.search,
+    rejectedMode: f.rejectedMode
   }
 }
 
@@ -66,7 +74,9 @@ export function deserializeFilterState(s: SerializedFilterState): SLAFilterState
     dateMode: s.dateMode,
     month: s.month,
     dateFrom: s.dateFrom,
-    dateTo: s.dateTo
+    dateTo: s.dateTo,
+    search: s.search ?? '',
+    rejectedMode: s.rejectedMode ?? 'include'
   }
 }
 
