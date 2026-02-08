@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { jiraService } from './services/JiraService'
 import { storageService } from './services/StorageService'
 import { projectService } from './services/ProjectService'
+import { slaMetricsService } from './services/SlaMetricsService'
 import { generateSLAReport } from './sla-parser'
 import type { JiraConfig } from '../shared/jira-types'
 import type { ProjectConfig, AppSettings } from '../shared/project-types'
@@ -214,6 +215,11 @@ function registerIpcHandlers(): void {
       return projectService.reorderFilterPresets(projectName, presetIds)
     }
   )
+
+  // -- SLA Metrics --
+  ipcMain.handle('get-sla-metrics', (_event, projectName: string) => {
+    return slaMetricsService.getSlaMetrics(projectName)
+  })
 
   // -- Storage/Files --
   ipcMain.handle('read-json-file', (_event, filePath: string) => {

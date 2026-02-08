@@ -27,7 +27,14 @@ describe('SLADashboard', () => {
     )
     render(<SLADashboard />, { wrapper })
 
+    // Flush initial async loads (settings, projects, loadData)
+    await act(() => Promise.resolve())
+    await act(() => Promise.resolve())
+
     await act(() => vi.advanceTimersByTimeAsync(60 * 1000))
+
+    // Flush the async sync operations
+    await act(() => Promise.resolve())
 
     expect(screen.getByText(/Last sync:/)).toBeInTheDocument()
   })

@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import {
   PieChart,
   Pie,
@@ -13,150 +12,166 @@ import {
   Legend
 } from 'recharts'
 import { Card } from '../atoms/Card'
-import { H3, Label } from '../atoms/Typography'
-import type { SLASummary } from '../../../../shared/sla-types'
+import { H3 } from '../atoms/Typography'
+import type { SlaMetrics } from '../../../../shared/sla-types'
 
 interface SLAChartsProps {
-  summary: SLASummary
+  metrics: SlaMetrics
   className?: string
 }
 
 const COLORS = {
-  met: '#10b981',
-  missed: '#ef4444',
+  open: '#f59e0b',
+  closed: '#10b981',
+  inSla: '#10b981',
+  outOfSla: '#ef4444',
   cyan: '#00f2ff',
   blue: '#3b82f6',
   purple: '#8b5cf6',
-  amber: '#f59e0b'
+  amber: '#f59e0b',
+  pink: '#ec4899',
+  teal: '#14b8a6'
 }
 
-export function SLACharts({ summary, className = '' }: SLAChartsProps): JSX.Element {
-  const complianceData = useMemo(
-    () => [
-      {
-        name: 'Reaction',
-        met: summary.reactionMet,
-        missed: summary.reactionMissed
-      },
-      {
-        name: 'Resolution',
-        met: summary.resolutionMet,
-        missed: summary.resolutionMissed
-      }
-    ],
-    [summary]
-  )
+const PIE_PALETTE = [
+  COLORS.cyan,
+  COLORS.purple,
+  COLORS.amber,
+  COLORS.blue,
+  COLORS.pink,
+  COLORS.teal
+]
 
-  const typeData = useMemo(
-    () =>
-      Object.entries(summary.byType).map(([name, value]) => ({
-        name,
-        value
-      })),
-    [summary]
-  )
+const tooltipStyle = {
+  backgroundColor: 'rgba(22,22,31,0.95)',
+  border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: '8px'
+}
 
-  const priorityData = useMemo(
-    () =>
-      Object.entries(summary.byPriority).map(([name, data]) => ({
-        name,
-        reactionCompliance: Math.round(data.reactionCompliance),
-        resolutionCompliance: Math.round(data.resolutionCompliance)
-      })),
-    [summary]
-  )
+const axisStyle = { stroke: 'rgba(255,255,255,0.4)', fontSize: 12 }
+const gridStyle = { strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.05)' }
 
+export function SLACharts({ metrics, className = '' }: SLAChartsProps): JSX.Element {
   return (
     <div className={`grid grid-cols-1 lg:grid-cols-2 gap-4 ${className}`}>
-      {/* Compliance overview */}
+      {/* US1 — Open vs Closed Tasks per week */}
       <Card>
-        <H3 className="mb-4">SLA Compliance</H3>
+        <H3 className="mb-4">Open vs Closed Tasks</H3>
         <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={complianceData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-            <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={12} />
-            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'rgba(22,22,31,0.95)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px'
-              }}
-            />
+          <BarChart data={metrics.tasks}>
+            <CartesianGrid {...gridStyle} />
+            <XAxis dataKey="week" {...axisStyle} />
+            <YAxis {...axisStyle} />
+            <Tooltip contentStyle={tooltipStyle} />
             <Legend />
-            <Bar dataKey="met" name="Met" fill={COLORS.met} radius={[4, 4, 0, 0]} />
-            <Bar dataKey="missed" name="Missed" fill={COLORS.missed} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="open" name="Open" fill={COLORS.open} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="closed" name="Closed" fill={COLORS.closed} radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </Card>
 
-      {/* Issue type distribution */}
+      {/* US2 — Open vs Closed Bugs/Service Requests per week */}
       <Card>
-        <H3 className="mb-4">Issue Type Distribution</H3>
+        <H3 className="mb-4">Open vs Closed Bugs / Service Requests</H3>
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={metrics.bugsAndRequests}>
+            <CartesianGrid {...gridStyle} />
+            <XAxis dataKey="week" {...axisStyle} />
+            <YAxis {...axisStyle} />
+            <Tooltip contentStyle={tooltipStyle} />
+            <Legend />
+            <Bar dataKey="open" name="Open" fill={COLORS.open} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="closed" name="Closed" fill={COLORS.closed} radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </Card>
+
+      {/* US3 — SLA Compliance for Response Time */}
+      <Card>
+        <H3 className="mb-4">SLA Compliance – Response Time</H3>
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart
+            data={[
+              { name: 'Response Time', inSla: metrics.responseTimeSla.inSla, outOfSla: metrics.responseTimeSla.outOfSla }
+            ]}
+          >
+            <CartesianGrid {...gridStyle} />
+            <XAxis dataKey="name" {...axisStyle} />
+            <YAxis {...axisStyle} />
+            <Tooltip contentStyle={tooltipStyle} />
+            <Legend />
+            <Bar dataKey="inSla" name="In SLA" fill={COLORS.inSla} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="outOfSla" name="Out of SLA" fill={COLORS.outOfSla} radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </Card>
+
+      {/* US4 — SLA Compliance for Resolution Time */}
+      <Card>
+        <H3 className="mb-4">SLA Compliance – Resolution Time</H3>
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart
+            data={[
+              { name: 'Resolution Time', inSla: metrics.resolutionTimeSla.inSla, outOfSla: metrics.resolutionTimeSla.outOfSla }
+            ]}
+          >
+            <CartesianGrid {...gridStyle} />
+            <XAxis dataKey="name" {...axisStyle} />
+            <YAxis {...axisStyle} />
+            <Tooltip contentStyle={tooltipStyle} />
+            <Legend />
+            <Bar dataKey="inSla" name="In SLA" fill={COLORS.inSla} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="outOfSla" name="Out of SLA" fill={COLORS.outOfSla} radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </Card>
+
+      {/* US5 — Bugs/Service Requests vs Rejected Issues pie */}
+      <Card>
+        <H3 className="mb-4">Bugs / Service Requests vs Rejected</H3>
         <ResponsiveContainer width="100%" height={250}>
           <PieChart>
             <Pie
-              data={typeData}
+              data={metrics.issueTypeDistribution}
               cx="50%"
               cy="50%"
               innerRadius={60}
               outerRadius={90}
               paddingAngle={4}
               dataKey="value"
-              label={({ name, value }) => `${name}: ${value}`}
+              label={({ name, percent }) => `${name}: ${Math.round((percent ?? 0) * 100)}%`}
             >
-              {typeData.map((_, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={Object.values(COLORS)[index % Object.values(COLORS).length]}
-                />
+              {metrics.issueTypeDistribution.map((_, index) => (
+                <Cell key={`cell-type-${index}`} fill={PIE_PALETTE[index % PIE_PALETTE.length]} />
               ))}
             </Pie>
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'rgba(22,22,31,0.95)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px'
-              }}
-            />
+            <Tooltip contentStyle={tooltipStyle} />
           </PieChart>
         </ResponsiveContainer>
       </Card>
 
-      {/* Priority compliance */}
-      <Card className="lg:col-span-2">
-        <H3 className="mb-4">Compliance by Priority</H3>
+      {/* US6 — Priority Distribution pie */}
+      <Card>
+        <H3 className="mb-4">Priority Distribution</H3>
         <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={priorityData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-            <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={12} />
-            <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} domain={[0, 100]} unit="%" />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'rgba(22,22,31,0.95)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px'
-              }}
-              formatter={(value: number | undefined) => `${value ?? 0}%`}
-            />
-            <Legend />
-            <Bar
-              dataKey="reactionCompliance"
-              name="Reaction %"
-              fill={COLORS.cyan}
-              radius={[4, 4, 0, 0]}
-            />
-            <Bar
-              dataKey="resolutionCompliance"
-              name="Resolution %"
-              fill={COLORS.purple}
-              radius={[4, 4, 0, 0]}
-            />
-          </BarChart>
+          <PieChart>
+            <Pie
+              data={metrics.priorityDistribution}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={90}
+              paddingAngle={4}
+              dataKey="value"
+              label={({ name, percent }) => `${name}: ${Math.round((percent ?? 0) * 100)}%`}
+            >
+              {metrics.priorityDistribution.map((_, index) => (
+                <Cell key={`cell-prio-${index}`} fill={PIE_PALETTE[index % PIE_PALETTE.length]} />
+              ))}
+            </Pie>
+            <Tooltip contentStyle={tooltipStyle} />
+          </PieChart>
         </ResponsiveContainer>
-        <div className="mt-2 flex justify-center gap-4">
-          <Label>Target: 100% compliance across all priorities</Label>
-        </div>
       </Card>
     </div>
   )

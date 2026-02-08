@@ -18,9 +18,11 @@ describe('SettingsPage', () => {
 
     await act(() => Promise.resolve())
 
-    const input = screen.getByLabelText('Auto-refresh interval (minutes)')
+    const input = screen.getAllByRole('spinbutton').find(
+      (el) => el.getAttribute('min') === '0'
+    )
     expect(input).toBeInTheDocument()
-    expect(input).toHaveValue(5)
+    expect(input).toHaveValue(1)
 
     fireEvent.change(input, { target: { value: '10' } })
 

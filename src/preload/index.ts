@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { JiraConfig, JiraVersion } from '../shared/jira-types'
 import type { ProjectConfig, AppSettings, SLAGroup } from '../shared/project-types'
 import type { SerializedFilterState, FilterPresetCollection } from '../shared/filter-types'
+import type { SlaMetrics } from '../shared/sla-types'
 
 const api = {
   // Settings
@@ -73,6 +74,10 @@ const api = {
     presetIds: string[]
   ): Promise<FilterPresetCollection> =>
     ipcRenderer.invoke('reorder-filter-presets', projectName, presetIds),
+
+  // SLA Metrics
+  getSlaMetrics: (projectName: string): Promise<SlaMetrics | null> =>
+    ipcRenderer.invoke('get-sla-metrics', projectName),
 
   // Storage
   readJsonFile: (filePath: string) => ipcRenderer.invoke('read-json-file', filePath),

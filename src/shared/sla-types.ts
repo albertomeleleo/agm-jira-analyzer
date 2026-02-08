@@ -81,3 +81,28 @@ export interface SLAPrioritySummary {
   reactionCompliance: number
   resolutionCompliance: number
 }
+
+export interface WeeklyCount {
+  week: string // e.g., "2026-W05"
+  open: number
+  closed: number
+}
+
+export interface SlaCompliance {
+  inSla: number
+  outOfSla: number
+}
+
+export interface PieChartDataPoint {
+  name: string
+  value: number
+}
+
+export interface SlaMetrics {
+  tasks: WeeklyCount[]
+  bugsAndRequests: WeeklyCount[]
+  responseTimeSla: SlaCompliance
+  resolutionTimeSla: SlaCompliance
+  issueTypeDistribution: PieChartDataPoint[]
+  priorityDistribution: PieChartDataPoint[]
+}

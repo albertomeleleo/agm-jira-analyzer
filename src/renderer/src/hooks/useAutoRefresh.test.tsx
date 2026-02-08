@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import { vi } from 'vitest'
 import { useAutoRefresh } from './useAutoRefresh'
 import { RefreshProvider } from '../contexts/RefreshContext'
@@ -12,10 +12,13 @@ describe('useAutoRefresh', () => {
     vi.useRealTimers()
   })
 
-  it('should call onRefresh when enabled', () => {
+  it('should call onRefresh when enabled', async () => {
     const onRefresh = vi.fn()
     const wrapper = ({ children }) => <RefreshProvider>{children}</RefreshProvider>
     renderHook(() => useAutoRefresh(onRefresh, 'some-jql'), { wrapper })
+
+    // Flush async settings load so autoRefreshInterval becomes 1
+    await act(() => Promise.resolve())
 
     vi.advanceTimersByTime(60 * 1000)
     expect(onRefresh).toHaveBeenCalledTimes(1)
