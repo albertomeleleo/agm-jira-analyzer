@@ -22,7 +22,7 @@ description: "Task list for Issue Key Sorting implementation"
 
 **Purpose**: Project initialization and core utility structure.
 
-- [ ] T001 Create `src/shared/jira-utils.ts` and implement the `compareJiraKeys(a: string, b: string): number` logic as defined in the data model.
+- [X] T001 Create `src/shared/jira-utils.ts` and implement the `compareJiraKeys(a: string, b: string): number` logic as defined in the data model.
 
 ---
 
@@ -32,7 +32,7 @@ description: "Task list for Issue Key Sorting implementation"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T002 [P] Create unit tests for `compareJiraKeys` in `tests/jira-utils.test.ts` covering numerical sorting (RAM-1000 > RAM-998), lexicographical prefix matching, and fallbacks.
+- [X] T002 [P] Create unit tests for `compareJiraKeys` in `tests/jira-utils.test.ts` covering numerical sorting (RAM-1000 > RAM-998), lexicographical prefix matching, and fallbacks.
 
 **Checkpoint**: Foundation ready - numerical comparison is verified.
 
@@ -46,8 +46,8 @@ description: "Task list for Issue Key Sorting implementation"
 
 ### Implementation for User Story 1
 
-- [ ] T003 Update the default state of `sortDir` from `'asc'` to `'desc'` in `src/renderer/src/design-system/organisms/SLATable.tsx`.
-- [ ] T004 Integrate `compareJiraKeys` into the `useMemo` sorting block for the `'key'` case in `src/renderer/src/design-system/organisms/SLATable.tsx`.
+- [X] T003 Update the default state of `sortDir` from `'asc'` to `'desc'` in `src/renderer/src/design-system/organisms/SLATable.tsx`.
+- [X] T004 Integrate `compareJiraKeys` into the `useMemo` sorting block for the `'key'` case in `src/renderer/src/design-system/organisms/SLATable.tsx`.
 
 **Checkpoint**: At this point, User Story 1 is functional. The list sorts correctly on load and uses numerical logic.
 
@@ -61,7 +61,7 @@ description: "Task list for Issue Key Sorting implementation"
 
 ### Implementation for User Story 2
 
-- [ ] T005 Verify the header click handler and visual arrow indicator in `src/renderer/src/design-system/organisms/SLATable.tsx` correctly toggle and represent the new default state.
+- [X] T005 Verify the header click handler and visual arrow indicator in `src/renderer/src/design-system/organisms/SLATable.tsx` correctly toggle and represent the new default state.
 
 **Checkpoint**: User Story 2 is complete. Full sorting flexibility is available to the user.
 
@@ -71,8 +71,8 @@ description: "Task list for Issue Key Sorting implementation"
 
 **Purpose**: Final verification and documentation.
 
-- [ ] T006 Run `npm run typecheck` to ensure no regressions in `SLATable.tsx` or shared utilities.
-- [ ] T007 [P] Update `specs/010-issue-key-sorting/quickstart.md` with final verification notes.
+- [X] T006 Run `npm run typecheck` to ensure no regressions in `SLATable.tsx` or shared utilities.
+- [X] T007 [P] Update `specs/010-issue-key-sorting/quickstart.md` with final verification notes.
 
 ---
 

@@ -21,4 +21,13 @@ This feature ensures Jira issues are sorted numerically by their sequence number
 ## Technical Notes
 -   Logic resides in `src/shared/jira-utils.ts`.
 -   UI update in `src/renderer/src/design-system/organisms/SLATable.tsx`.
--   Unit tests in `tests/jira-utils.test.ts`.
+-   Unit tests in `tests/jira-utils.test.ts` (17 test cases, all passing).
+
+## Implementation Summary
+-   ✅ Created `compareJiraKeys()` utility with numerical comparison logic
+-   ✅ Comprehensive test coverage including edge cases (leading zeros, multiple hyphens, large numbers)
+-   ✅ Updated default `sortDir` to `'desc'` in SLATable component
+-   ✅ Integrated numerical sorting into table's sorting logic
+-   ✅ Updated sort field switching to default to descending order
+-   ✅ All 103 tests passing (17 new jira-utils tests + 86 existing tests)
+-   ✅ No TypeScript regressions

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Activity, AlertTriangle, Download, RefreshCw, X } from 'lucide-react'
-import { Button, H2, SLACharts, IssueImportModal, SLAFilters } from '@design-system'
+import { Button, H2, SLACharts, IssueImportModal, SLAFilters, FilterPresetBar } from '@design-system'
 import { useProject } from '../contexts/ProjectContext'
 import { usePageFilter } from '../contexts/FilterContext'
 import { useAutoRefresh } from '../hooks/useAutoRefresh'
@@ -10,7 +10,7 @@ import type { SLAIssue, SlaMetrics } from '../../../shared/sla-types'
 
 export function SLADashboard(): JSX.Element {
   const { activeProject } = useProject()
-  const { filters, setFilters, resetFilters } = usePageFilter('dashboard')
+  const { filters, setFilters, resetFilters, presets, savePreset, deletePreset, updatePreset, loadPreset } = usePageFilter('dashboard')
   const [allIssues, setAllIssues] = useState<SLAIssue[]>([])
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [lastJql, setLastJql] = useState<string | null>(null)
@@ -131,6 +131,20 @@ export function SLADashboard(): JSX.Element {
           <button onClick={() => setSyncError(null)} className="text-red-400 hover:text-red-300">
             <X size={14} />
           </button>
+        </div>
+      )}
+
+      {/* Quick Filters (Presets) */}
+      {allIssues.length > 0 && (
+        <div className="glass p-4">
+          <FilterPresetBar
+            presets={presets}
+            onLoad={loadPreset}
+            onSave={savePreset}
+            onDelete={deletePreset}
+            onUpdate={updatePreset}
+            currentFilters={filters}
+          />
         </div>
       )}
 

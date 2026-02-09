@@ -6,6 +6,7 @@ import { PRIORITY_TO_TIER } from '../molecules/SLAFilters'
 import { useRemainingTime } from '../../hooks/useRemainingTime'
 import { calculateRemainingMinutes } from '../../utils/sla-utils'
 import { getStatusVariant } from '../../../../shared/status-utils'
+import { compareJiraKeys } from '../../../../shared/jira-utils'
 import type { SLAIssue, SLASegment } from '../../../../shared/sla-types'
 
 interface SLATableProps {
@@ -261,7 +262,7 @@ function IssueRow({
 export function SLATable({ issues, excludeLunchBreak, className = '' }: SLATableProps): JSX.Element {
   const [search, setSearch] = useState('')
   const [sortField, setSortField] = useState<'key' | 'priority' | 'reaction' | 'resolution' | 'remaining'>('key')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const now = useRemainingTime()
 
   const filtered = useMemo(() => {
@@ -280,7 +281,7 @@ export function SLATable({ issues, excludeLunchBreak, className = '' }: SLATable
       let cmp = 0
       switch (sortField) {
         case 'key':
-          cmp = a.key.localeCompare(b.key)
+          cmp = compareJiraKeys(a.key, b.key)
           break
         case 'priority':
           cmp = (a.priority ?? '').localeCompare(b.priority ?? '')
@@ -309,7 +310,7 @@ export function SLATable({ issues, excludeLunchBreak, className = '' }: SLATable
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
     } else {
       setSortField(field)
-      setSortDir('asc')
+      setSortDir('desc')
     }
   }
 
