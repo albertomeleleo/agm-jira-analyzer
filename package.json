@@ -18,7 +18,13 @@
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:mac": "npm run build && electron-builder --mac",
+    "build:mac:x64": "npm run build && electron-builder --mac --x64",
+    "build:mac:arm64": "npm run build && electron-builder --mac --arm64",
+    "build:mac:universal": "npm run build && electron-builder --mac --universal",
     "build:win": "npm run build && electron-builder --win",
+    "build:win:x64": "npm run build && electron-builder --win --x64",
+    "build:win:ia32": "npm run build && electron-builder --win --ia32",
+    "build:both:x64": "npm run build && electron-builder --mac --x64 --win --x64",
     "build:all": "npm run build && electron-builder --win --mac"
   },
   "dependencies": {
