@@ -1,6 +1,5 @@
 import { renderHook, act } from '@testing-library/react'
 import { RefreshProvider, useRefresh } from './RefreshContext'
-import { vi } from 'vitest'
 
 describe('RefreshContext', () => {
   it('should provide the autoRefreshInterval and a function to update it', async () => {

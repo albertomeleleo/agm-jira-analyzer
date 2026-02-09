@@ -1,6 +1,5 @@
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { SettingsPage } from './SettingsPage'
-import { vi } from 'vitest'
 import { ThemeProvider } from '../contexts/ThemeContext'
 import { ProjectProvider } from '../contexts/ProjectContext'
 import { RefreshProvider } from '../contexts/RefreshContext'
@@ -22,6 +21,7 @@ describe('SettingsPage', () => {
       (el) => el.getAttribute('min') === '0'
     )
     expect(input).toBeInTheDocument()
+    if (!input) throw new Error('Input not found')
     expect(input).toHaveValue(1)
 
     fireEvent.change(input, { target: { value: '10' } })
