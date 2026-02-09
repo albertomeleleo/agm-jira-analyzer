@@ -1,4 +1,5 @@
 import { getISOWeek, getISOWeekYear } from 'date-fns'
+import { isRejectedStatus } from './status-utils'
 import type { SLAIssue, SlaMetrics, WeeklyCount, SlaCompliance, PieChartDataPoint } from './sla-types'
 
 const BUG_AND_REQUEST_TYPES = ['bug', 'service request', 'incident', 'storia']
@@ -67,7 +68,7 @@ export function calculateSlaMetrics(issues: SLAIssue[]): SlaMetrics {
   }
 
   // Issue type distribution: bugs/service requests vs rejected
-  const rejectedCount = issues.filter((i) => i.status.toLowerCase().includes('reject')).length
+  const rejectedCount = issues.filter((i) => isRejectedStatus(i.status)).length
   const bugRequestCount = bugAndRequestIssues.length
   const issueTypeDistribution: PieChartDataPoint[] = []
   if (bugRequestCount > 0) issueTypeDistribution.push({ name: 'Bugs & Requests', value: bugRequestCount })

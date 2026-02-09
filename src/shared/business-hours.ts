@@ -124,3 +124,34 @@ export function getBusinessMinutesBetween(start: Date, end: Date, excludeLunch =
 export function getCalendarMinutesBetween(start: Date, end: Date): number {
   return Math.max(0, differenceInMinutes(end, start))
 }
+
+/**
+ * Calculate minutes spent on non-working days (weekends and holidays)
+ * This counts time that falls outside of business days (Sat, Sun, holidays)
+ */
+export function getNonWorkingDayMinutes(start: Date, end: Date): number {
+  if (!isBefore(start, end)) return 0
+
+  let totalMinutes = 0
+  let current = new Date(start)
+
+  while (isBefore(current, end)) {
+    // Check if current day is a non-working day (weekend or holiday)
+    if (!isBusinessDay(current)) {
+      // Calculate how much of this non-working day falls within our range
+      const dayStart = setTimeOfDay(current, 0, 0)
+      const dayEnd = setTimeOfDay(current, 23, 59)
+
+      const effectiveStart = isBefore(current, dayStart) ? dayStart : current
+      const effectiveEnd = isAfter(end, dayEnd) ? dayEnd : end
+
+      if (isBefore(effectiveStart, effectiveEnd)) {
+        totalMinutes += differenceInMinutes(effectiveEnd, effectiveStart)
+      }
+    }
+
+    current = setTimeOfDay(addDays(current, 1), 0)
+  }
+
+  return totalMinutes
+}

@@ -2,6 +2,16 @@
  * Jira-specific utility functions
  */
 
+// Priority weights for logical sorting
+// Higher weight = higher priority (Critical > High > Medium > Low > Lowest)
+export const PRIORITY_WEIGHTS: Record<string, number> = {
+  'critical': 5,
+  'high': 4,
+  'medium': 3,
+  'low': 2,
+  'lowest': 1
+}
+
 /**
  * Compare two Jira issue keys numerically for sorting.
  *
@@ -52,4 +62,37 @@ export function compareJiraKeys(a: string, b: string): number {
 
   // Compare numerically
   return numA - numB
+}
+
+/**
+ * Compare two Jira priorities for logical sorting.
+ *
+ * Uses weight-based comparison: Critical (5) > High (4) > Medium (3) > Low (2) > Lowest (1)
+ * Unmapped priorities default to weight 0 and are sorted to the bottom.
+ *
+ * Returns positive if a has higher priority (should come first in descending sort).
+ * Returns negative if b has higher priority (should come first).
+ * Returns 0 if equal priority.
+ *
+ * @param a - First priority (e.g., "Critical", "High")
+ * @param b - Second priority (e.g., "Medium", "Low")
+ * @returns Positive if a > b (a should come first in descending sort),
+ *          Negative if a < b (b should come first),
+ *          0 if equal priority
+ *
+ * @example
+ * comparePriorities("Critical", "High")  // > 0 (Critical comes first)
+ * comparePriorities("Low", "Medium")     // < 0 (Medium comes first)
+ * comparePriorities("High", "High")      // 0 (equal)
+ * ["Low", "Critical", "High"].sort(comparePriorities) // ["Critical", "High", "Low"]
+ */
+export function comparePriorities(a: string, b: string): number {
+  const normalizedA = a.trim().toLowerCase()
+  const normalizedB = b.trim().toLowerCase()
+
+  const weightA = PRIORITY_WEIGHTS[normalizedA] ?? 0
+  const weightB = PRIORITY_WEIGHTS[normalizedB] ?? 0
+
+  // For descending sort (highest priority first), return weightB - weightA
+  return weightB - weightA
 }

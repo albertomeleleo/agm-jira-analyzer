@@ -1,5 +1,5 @@
 import { getBusinessMinutesBetween, getCalendarMinutesBetween } from '../../../shared/business-hours'
-import { getStatusVariant } from '../../../shared/status-utils'
+import { getStatusVariant, isRejectedStatus } from '../../../shared/status-utils'
 import type { SLAIssue } from '../../../shared/sla-types'
 
 /**
@@ -14,6 +14,9 @@ export function calculateRemainingMinutes(
   now: Date,
   excludeLunchBreak: boolean
 ): number | null {
+  // Don't calculate remaining time for rejected issues
+  if (isRejectedStatus(issue.status)) return null
+
   // Only calculate for non-closed issues (Done, Released, Resolved, Closed)
   const statusVariant = getStatusVariant(issue.status)
   if (statusVariant === 'success') return null

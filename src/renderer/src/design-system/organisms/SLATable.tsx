@@ -193,6 +193,18 @@ function IssueRow({
                 </span>
               </div>
               <div>
+                <span className="text-brand-text-sec">Dependency time:</span>{' '}
+                <span className="text-brand-text-pri font-medium">
+                  {formatMinutes(issue.timeInDependencyMinutes)}
+                </span>
+              </div>
+              <div>
+                <span className="text-brand-text-sec">Non-working days:</span>{' '}
+                <span className="text-brand-text-pri font-medium">
+                  {formatMinutes(issue.timeInNonWorkingDaysMinutes)}
+                </span>
+              </div>
+              <div>
                 <span className="text-brand-text-sec">24x7:</span>{' '}
                 <span className="text-brand-text-pri font-medium">
                   {issue.is24x7 ? 'Yes' : 'No'}
@@ -224,6 +236,22 @@ function IssueRow({
                       <div key={i} className="flex gap-4 text-brand-text-sec/80">
                         <span>{seg.status}</span>
                         <span>{formatMinutes(seg.durationMinutes)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {issue.dependencySegments.length > 0 && (
+                <div className="col-span-3">
+                  <span className="text-brand-text-sec block mb-1">Dependency segments:</span>
+                  <div className="space-y-1">
+                    {issue.dependencySegments.map((seg, i) => (
+                      <div key={i} className="flex gap-4 text-brand-text-sec/80">
+                        <Badge variant="danger" className="text-xs">{seg.status}</Badge>
+                        <span className="text-brand-text-pri font-medium">{formatMinutes(seg.durationMinutes)}</span>
+                        <span className="text-brand-text-sec/60 text-xs">
+                          {new Date(seg.startTime).toLocaleDateString()} → {new Date(seg.endTime).toLocaleDateString()}
+                        </span>
                       </div>
                     ))}
                   </div>

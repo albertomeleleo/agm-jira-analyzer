@@ -1,8 +1,10 @@
 import { parseISO, isBefore, isAfter } from 'date-fns'
 import {
   getBusinessMinutesBetween,
-  getCalendarMinutesBetween
+  getCalendarMinutesBetween,
+  getNonWorkingDayMinutes
 } from '../shared/business-hours'
+import { isRejectedStatus } from '../shared/status-utils'
 import type { JiraIssue } from '../shared/jira-types'
 import type { SLAIssue, SLASegment, SLAReport, SLASummary, SLAPrioritySummary } from '../shared/sla-types'
 import type { SLAGroup } from '../shared/project-types'
@@ -43,7 +45,7 @@ function extractStatusTransitions(issue: JiraIssue): StatusTransition[] {
 
   for (const history of issue.changelog.histories) {
     for (const item of history.items) {
-      if (item.field === 'status') {
+      if (item.field === 'status' || item.field === 'Motivo Impedimento') { 
         transitions.push({
           timestamp: parseISO(history.created),
           fromStatus: item.fromString,
@@ -62,6 +64,10 @@ function isPauseStatus(status: string): boolean {
   return PAUSE_STATUSES.some(
     (ps) => status.toLowerCase() === ps.toLowerCase() || status.toLowerCase().startsWith('dipendenza')
   )
+}
+
+function isDependencyStatus(status: string): boolean {
+  return status.toLowerCase().startsWith('dipendenza')
 }
 
 function isWorkStatus(status: string): boolean {
@@ -94,6 +100,8 @@ export function parseSLAForIssue(issue: JiraIssue, slaGroups: SLAGroup[], exclud
   const issueType = issue.fields.issuetype.name
   const isTask = issueType.toLowerCase() === 'task'
   const use24x7 = isExpedite(priority, createdDate)
+  const status = issue.fields.status.name
+  const isRejected = isRejectedStatus(status)
 
   const calcMinutes = use24x7
     ? getCalendarMinutesBetween
@@ -107,7 +115,8 @@ export function parseSLAForIssue(issue: JiraIssue, slaGroups: SLAGroup[], exclud
   let reactionTargetMinutes: number | null = null
   let reactionSLAMet: boolean | null = null
 
-  if (!isTask) {
+  // Don't calculate SLA for rejected issues
+  if (!isTask && !isRejected) {
     const firstNonOpen = transitions.find(
       (t) => t.fromStatus && isOpenStatus(t.fromStatus) && !isOpenStatus(t.toStatus)
     )
@@ -153,10 +162,14 @@ export function parseSLAForIssue(issue: JiraIssue, slaGroups: SLAGroup[], exclud
   // --- Build segments and compute pause ---
   const segments: SLASegment[] = []
   const pauseSegments: SLASegment[] = []
+  const dependencySegments: SLASegment[] = []
   let timeInPauseMinutes = 0
+  let timeInDependencyMinutes = 0
 
   if (resolutionStart) {
     let currentStatus = isTask ? 'Created' : (transitions.find((t) => isWorkStatus(t.toStatus))?.toStatus ?? 'Unknown')
+    console.log(`Checking if status "${status}" is a dependency status`);
+
     let segmentStart = resolutionStart
     const endBound = resolutionEnd ?? new Date()
 
@@ -166,6 +179,7 @@ export function parseSLAForIssue(issue: JiraIssue, slaGroups: SLAGroup[], exclud
 
       const segDuration = calcMinutes(segmentStart, transition.timestamp)
       const isCurrentPause = isPauseStatus(currentStatus)
+      const isCurrentDependency = isDependencyStatus(currentStatus)
 
       const segment: SLASegment = {
         status: currentStatus,
@@ -176,10 +190,15 @@ export function parseSLAForIssue(issue: JiraIssue, slaGroups: SLAGroup[], exclud
         isWork: !isCurrentPause
       }
       segments.push(segment)
-
+      
       if (isCurrentPause) {
         pauseSegments.push(segment)
         timeInPauseMinutes += segDuration
+      }
+
+      if (isCurrentDependency) {
+        dependencySegments.push(segment)
+        timeInDependencyMinutes += segDuration
       }
 
       currentStatus = transition.toStatus
@@ -190,6 +209,7 @@ export function parseSLAForIssue(issue: JiraIssue, slaGroups: SLAGroup[], exclud
     if (isBefore(segmentStart, endBound)) {
       const segDuration = calcMinutes(segmentStart, endBound)
       const isCurrentPause = isPauseStatus(currentStatus)
+      const isCurrentDependency = isDependencyStatus(currentStatus)
       const segment: SLASegment = {
         status: currentStatus,
         startTime: segmentStart.toISOString(),
@@ -203,6 +223,10 @@ export function parseSLAForIssue(issue: JiraIssue, slaGroups: SLAGroup[], exclud
         pauseSegments.push(segment)
         timeInPauseMinutes += segDuration
       }
+      if (isCurrentDependency) {
+        dependencySegments.push(segment)
+        timeInDependencyMinutes += segDuration
+      }
     }
   }
 
@@ -214,46 +238,56 @@ export function parseSLAForIssue(issue: JiraIssue, slaGroups: SLAGroup[], exclud
   let reactionRemainingMinutes: number | null = null
   let resolutionRemainingMinutes: number | null = null
 
-  if (resolutionStart && resolutionEnd) {
-    resolutionTimeMinutes = calcMinutes(resolutionStart, resolutionEnd)
-    resolutionNetMinutes = resolutionTimeMinutes - timeInPauseMinutes
-    
-    if (isTask) {
-      resolutionTargetMinutes = 8100 // 15 business days * 9h * 60m
-    } else {
-      resolutionTargetMinutes = slaGroup?.target.resolutionMinutes ?? null
-    }
-
-    if (resolutionNetMinutes !== null && resolutionTargetMinutes !== null) {
-      resolutionSLAMet = resolutionNetMinutes <= resolutionTargetMinutes
-    }
-  } else if (resolutionStart && !resolutionEnd) {
-    // Open issue: compute elapsed net and remaining time
-    const now = new Date()
-    const elapsedGross = calcMinutes(resolutionStart, now)
-    resolutionNetMinutes = elapsedGross - timeInPauseMinutes
-    
-    if (isTask) {
-      resolutionTargetMinutes = 8100 // 15 business days * 9h * 60m
-    } else {
-      resolutionTargetMinutes = slaGroup?.target.resolutionMinutes ?? null
-    }
-    
-    resolutionTimeMinutes = elapsedGross
-
-    if (resolutionTargetMinutes !== null) {
-      resolutionRemainingMinutes = resolutionTargetMinutes - resolutionNetMinutes
-    }
+  // Calculate time spent on non-working days (weekends and holidays)
+  let timeInNonWorkingDaysMinutes = 0
+  if (resolutionStart) {
+    const endBound = resolutionEnd ?? new Date()
+    timeInNonWorkingDaysMinutes = getNonWorkingDayMinutes(resolutionStart, endBound)
   }
 
-  // Reaction remaining for open issues (non-task, no first-non-open transition yet)
-  if (!isTask && reactionTimeMinutes === null && !resolutionEnd) {
-    const now = new Date()
-    reactionTimeMinutes = calcMinutes(createdDate, now)
-    reactionTargetMinutes = slaGroup?.target.reactionMinutes ?? null
+  // Don't calculate SLA for rejected issues
+  if (!isRejected) {
+    if (resolutionStart && resolutionEnd) {
+      resolutionTimeMinutes = calcMinutes(resolutionStart, resolutionEnd)
+      resolutionNetMinutes = resolutionTimeMinutes - timeInPauseMinutes
 
-    if (reactionTargetMinutes !== null) {
-      reactionRemainingMinutes = reactionTargetMinutes - reactionTimeMinutes
+      if (isTask) {
+        resolutionTargetMinutes = 8100 // 15 business days * 9h * 60m
+      } else {
+        resolutionTargetMinutes = slaGroup?.target.resolutionMinutes ?? null
+      }
+
+      if (resolutionNetMinutes !== null && resolutionTargetMinutes !== null) {
+        resolutionSLAMet = resolutionNetMinutes <= resolutionTargetMinutes
+      }
+    } else if (resolutionStart && !resolutionEnd) {
+      // Open issue: compute elapsed net and remaining time
+      const now = new Date()
+      const elapsedGross = calcMinutes(resolutionStart, now)
+      resolutionNetMinutes = elapsedGross - timeInPauseMinutes
+
+      if (isTask) {
+        resolutionTargetMinutes = 8100 // 15 business days * 9h * 60m
+      } else {
+        resolutionTargetMinutes = slaGroup?.target.resolutionMinutes ?? null
+      }
+
+      resolutionTimeMinutes = elapsedGross
+
+      if (resolutionTargetMinutes !== null) {
+        resolutionRemainingMinutes = resolutionTargetMinutes - resolutionNetMinutes
+      }
+    }
+
+    // Reaction remaining for open issues (non-task, no first-non-open transition yet)
+    if (!isTask && reactionTimeMinutes === null && !resolutionEnd) {
+      const now = new Date()
+      reactionTimeMinutes = calcMinutes(createdDate, now)
+      reactionTargetMinutes = slaGroup?.target.reactionMinutes ?? null
+
+      if (reactionTargetMinutes !== null) {
+        reactionRemainingMinutes = reactionTargetMinutes - reactionTimeMinutes
+      }
     }
   }
 
@@ -278,7 +312,10 @@ export function parseSLAForIssue(issue: JiraIssue, slaGroups: SLAGroup[], exclud
     reactionRemainingMinutes,
     resolutionRemainingMinutes,
     timeInPauseMinutes,
+    timeInDependencyMinutes,
+    timeInNonWorkingDaysMinutes,
     pauseSegments,
+    dependencySegments,
     segments,
     is24x7: use24x7,
     status: issue.fields.status.name,
@@ -291,6 +328,7 @@ export function parseSLAForIssue(issue: JiraIssue, slaGroups: SLAGroup[], exclud
 function buildSummary(issues: SLAIssue[]): SLASummary {
   const resolved = issues.filter((i) => i.resolved !== null)
   const open = issues.filter((i) => i.resolved === null)
+  const rejected = issues.filter((i) => isRejectedStatus(i.status))
 
   const reactionEligible = issues.filter((i) => i.reactionSLAMet !== null)
   const reactionMet = reactionEligible.filter((i) => i.reactionSLAMet === true).length
@@ -305,6 +343,7 @@ function buildSummary(issues: SLAIssue[]): SLASummary {
     if (!byPriority[issue.priority]) {
       byPriority[issue.priority] = {
         total: 0,
+        rejected: 0,
         reactionMet: 0,
         reactionMissed: 0,
         resolutionMet: 0,
@@ -315,6 +354,7 @@ function buildSummary(issues: SLAIssue[]): SLASummary {
     }
     const p = byPriority[issue.priority]
     p.total++
+    if (isRejectedStatus(issue.status)) p.rejected++
     if (issue.reactionSLAMet === true) p.reactionMet++
     if (issue.reactionSLAMet === false) p.reactionMissed++
     if (issue.resolutionSLAMet === true) p.resolutionMet++
@@ -338,6 +378,7 @@ function buildSummary(issues: SLAIssue[]): SLASummary {
     totalIssues: issues.length,
     resolvedIssues: resolved.length,
     openIssues: open.length,
+    rejectedIssues: rejected.length,
     reactionCompliance: reactionEligible.length > 0 ? (reactionMet / reactionEligible.length) * 100 : 100,
     resolutionCompliance: resolutionEligible.length > 0 ? (resolutionMet / resolutionEligible.length) * 100 : 100,
     reactionMet,

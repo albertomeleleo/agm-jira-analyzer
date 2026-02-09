@@ -56,3 +56,13 @@ export function getStatusVariant(status: string): StatusBadgeVariant {
   // Default (Gray): Any other status
   return 'default'
 }
+
+/**
+ * Check if an issue is rejected (Rejected, Won't Fix, Cancelled)
+ * @param status - Raw Jira status
+ * @returns true if the issue is rejected
+ */
+export function isRejectedStatus(status: string): boolean {
+  const lower = status.toLowerCase()
+  return lower.includes('reject') || lower.includes("won't") || lower.includes('cancel')
+}

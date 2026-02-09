@@ -43,7 +43,10 @@ export interface SLAIssue {
   resolutionRemainingMinutes: number | null
 
   timeInPauseMinutes: number
+  timeInDependencyMinutes: number
+  timeInNonWorkingDaysMinutes: number
   pauseSegments: SLASegment[]
+  dependencySegments: SLASegment[]
   segments: SLASegment[]
 
   is24x7: boolean
@@ -65,6 +68,7 @@ export interface SLASummary {
   totalIssues: number
   resolvedIssues: number
   openIssues: number
+  rejectedIssues: number
   reactionCompliance: number
   resolutionCompliance: number
   reactionMet: number
@@ -77,6 +81,7 @@ export interface SLASummary {
 
 export interface SLAPrioritySummary {
   total: number
+  rejected: number
   reactionMet: number
   reactionMissed: number
   resolutionMet: number
