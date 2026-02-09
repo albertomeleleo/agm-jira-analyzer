@@ -5,6 +5,7 @@ import { SearchField } from '../molecules/SearchField'
 import { PRIORITY_TO_TIER } from '../molecules/SLAFilters'
 import { useRemainingTime } from '../../hooks/useRemainingTime'
 import { calculateRemainingMinutes } from '../../utils/sla-utils'
+import { getStatusVariant } from '../../../../shared/status-utils'
 import type { SLAIssue, SLASegment } from '../../../../shared/sla-types'
 
 interface SLATableProps {
@@ -64,10 +65,11 @@ function RemainingBadge({
   now: Date
   excludeLunchBreak: boolean
 }): JSX.Element {
-  // Resolved issues: no remaining time to show
-  if (issue.resolved !== null) return <span className="text-brand-text-sec text-sm">-</span>
+  // Closed issues (Done, Released, Resolved, Closed): no remaining time to show
+  const statusVariant = getStatusVariant(issue.status)
+  if (statusVariant === 'success') return <span className="text-brand-text-sec text-sm">-</span>
 
-  // Calculate real-time remaining minutes
+  // Calculate real-time remaining minutes for non-closed issues
   const remaining = calculateRemainingMinutes(issue, now, excludeLunchBreak)
   const variant = getRemainingVariant(remaining)
 
@@ -92,10 +94,16 @@ function formatDurationFull(minutes: number): string {
   return parts.join(' ')
 }
 
-function getSegmentVariant(segment: SLASegment): 'danger' | 'info' | 'default' {
+function getSegmentVariant(segment: SLASegment): 'danger' | 'info' | 'success' | 'warning' | 'default' {
+  // Use semantic status colors for better visual clarity
+  const statusVariant = getStatusVariant(segment.status)
+
+  // Pause segments are always danger (red)
   if (segment.isPause) return 'danger'
-  if (segment.isWork) return 'info'
-  return 'default'
+
+  // For non-pause segments, use semantic status colors
+  // This makes Done/Released green, In Progress orange, etc.
+  return statusVariant
 }
 
 function IssueRow({
@@ -132,6 +140,11 @@ function IssueRow({
           <Badge variant="info">{issue.issueType}</Badge>
         </td>
         <td className="px-4 py-3">
+          <Badge variant={getStatusVariant(issue.status)}>
+            {issue.status}
+          </Badge>
+        </td>
+        <td className="px-4 py-3">
           <Badge variant={issue.priority === 'Highest' || issue.priority === 'Critical' ? 'danger' : 'default'}>
             {issue.priority}{PRIORITY_TO_TIER[issue.priority] ? ` (${PRIORITY_TO_TIER[issue.priority]})` : ''}
           </Badge>
@@ -160,8 +173,14 @@ function IssueRow({
       </tr>
       {expanded && (
         <tr className="bg-brand-card/20">
-          <td colSpan={9} className="px-8 py-4">
+          <td colSpan={10} className="px-8 py-4">
             <div className="grid grid-cols-3 gap-4 text-xs">
+              <div>
+                <span className="text-brand-text-sec">Current Status:</span>{' '}
+                <Badge variant={getStatusVariant(issue.status)} className="ml-1">
+                  {issue.status}
+                </Badge>
+              </div>
               <div>
                 <span className="text-brand-text-sec">Tier:</span>{' '}
                 <span className="text-brand-text-pri font-medium">{issue.slaTier}</span>
@@ -307,6 +326,7 @@ export function SLATable({ issues, excludeLunchBreak, className = '' }: SLATable
                 { key: 'key' as const, label: 'Key' },
                 { key: null, label: 'Summary' },
                 { key: null, label: 'Type' },
+                { key: null, label: 'Status' },
                 { key: 'priority' as const, label: 'Priority' },
                 { key: 'reaction' as const, label: 'Reaction' },
                 { key: null, label: 'Reaction SLA' },
@@ -331,7 +351,7 @@ export function SLATable({ issues, excludeLunchBreak, className = '' }: SLATable
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-sm text-brand-text-sec">
+                <td colSpan={10} className="px-4 py-8 text-center text-sm text-brand-text-sec">
                   No issues found
                 </td>
               </tr>

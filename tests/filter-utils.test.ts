@@ -101,6 +101,50 @@ describe('applyFilters – rejectedMode', () => {
   })
 })
 
+describe('applyFilters – status (open/resolved)', () => {
+  const issues = [
+    makeIssue({ key: 'PROJ-1', status: 'Open', resolved: null }),
+    makeIssue({ key: 'PROJ-2', status: 'In Progress', resolved: null }),
+    makeIssue({ key: 'PROJ-3', status: 'Done', resolved: '2026-01-10T10:00:00.000Z' }),
+    makeIssue({ key: 'PROJ-4', status: 'Released', resolved: '2026-01-11T10:00:00.000Z' }),
+    // Issue with Done status but no resolved date (should still be considered resolved)
+    makeIssue({ key: 'PROJ-5', status: 'Done', resolved: null }),
+    makeIssue({ key: 'PROJ-6', status: 'Resolved', resolved: null }),
+    makeIssue({ key: 'PROJ-7', status: 'Closed', resolved: '2026-01-12T10:00:00.000Z' })
+  ]
+
+  it('returns all issues when no status filter is applied', () => {
+    const result = applyFilters(issues, makeFilters({ statuses: new Set() }))
+    expect(result).toHaveLength(7)
+  })
+
+  it('filters for open issues (excluding Done/Released/Resolved/Closed)', () => {
+    const result = applyFilters(issues, makeFilters({ statuses: new Set(['open']) }))
+    expect(result).toHaveLength(2)
+    expect(result.map(i => i.key).sort()).toEqual(['PROJ-1', 'PROJ-2'])
+  })
+
+  it('filters for resolved issues (including Done even without resolved date)', () => {
+    const result = applyFilters(issues, makeFilters({ statuses: new Set(['resolved']) }))
+    expect(result).toHaveLength(5)
+    expect(result.map(i => i.key).sort()).toEqual(['PROJ-3', 'PROJ-4', 'PROJ-5', 'PROJ-6', 'PROJ-7'])
+  })
+
+  it('considers Done status as resolved even when resolved field is null', () => {
+    const doneIssueOnly = [makeIssue({ key: 'TEST-1', status: 'Done', resolved: null })]
+    const result = applyFilters(doneIssueOnly, makeFilters({ statuses: new Set(['resolved']) }))
+    expect(result).toHaveLength(1)
+    expect(result[0].key).toBe('TEST-1')
+  })
+
+  it('considers Released status as resolved even when resolved field is null', () => {
+    const releasedIssueOnly = [makeIssue({ key: 'TEST-1', status: 'Released', resolved: null })]
+    const result = applyFilters(releasedIssueOnly, makeFilters({ statuses: new Set(['resolved']) }))
+    expect(result).toHaveLength(1)
+    expect(result[0].key).toBe('TEST-1')
+  })
+})
+
 describe('applyFilters – combined filters', () => {
   const issues = [
     makeIssue({ key: 'PROJ-1', summary: 'Bug one', issueType: 'Bug', status: 'Open' }),

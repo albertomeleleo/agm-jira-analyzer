@@ -1,4 +1,5 @@
 import { getBusinessMinutesBetween, getCalendarMinutesBetween } from '../../../shared/business-hours'
+import { getStatusVariant } from '../../../shared/status-utils'
 import type { SLAIssue } from '../../../shared/sla-types'
 
 /**
@@ -13,8 +14,9 @@ export function calculateRemainingMinutes(
   now: Date,
   excludeLunchBreak: boolean
 ): number | null {
-  // Only for open issues
-  if (issue.resolved !== null) return null
+  // Only calculate for non-closed issues (Done, Released, Resolved, Closed)
+  const statusVariant = getStatusVariant(issue.status)
+  if (statusVariant === 'success') return null
 
   const calcMinutes = issue.is24x7
     ? getCalendarMinutesBetween

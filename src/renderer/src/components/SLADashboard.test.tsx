@@ -36,6 +36,8 @@ describe('SLADashboard', () => {
     // Flush the async sync operations
     await act(() => Promise.resolve())
 
+
     expect(screen.getByText(/Last sync:/)).toBeInTheDocument()
+
   })
 })

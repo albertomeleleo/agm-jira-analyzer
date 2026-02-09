@@ -1,6 +1,7 @@
 import { parseISO, format } from 'date-fns'
 import type { SLAFilterState } from './filter-types'
 import type { SLAIssue } from './sla-types'
+import { getStatusVariant } from './status-utils'
 
 export function applyFilters(issues: SLAIssue[], filters: SLAFilterState): SLAIssue[] {
   return issues.filter((issue) => {
@@ -13,9 +14,15 @@ export function applyFilters(issues: SLAIssue[], filters: SLAFilterState): SLAIs
     }
 
     if (filters.statuses.size > 0) {
-      const isOpen = issue.resolved === null
+      // Consider an issue resolved if:
+      // 1. The 'resolved' field is not null, OR
+      // 2. The status indicates completion (Done, Released, Resolved, Closed)
+      const statusVariant = getStatusVariant(issue.status)
+      const isResolved = issue.resolved !== null || statusVariant === 'success'
+      const isOpen = !isResolved
+
       const matchesOpen = filters.statuses.has('open') && isOpen
-      const matchesResolved = filters.statuses.has('resolved') && !isOpen
+      const matchesResolved = filters.statuses.has('resolved') && isResolved
       if (!matchesOpen && !matchesResolved) return false
     }
 
