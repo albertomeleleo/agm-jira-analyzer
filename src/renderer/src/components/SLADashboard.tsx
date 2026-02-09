@@ -6,7 +6,7 @@ import { usePageFilter } from '../contexts/FilterContext'
 import { useAutoRefresh } from '../hooks/useAutoRefresh'
 import { applyFilters } from '../../../shared/filter-utils'
 import { calculateSlaMetrics } from '../../../shared/sla-calculations'
-import type { SLAIssue } from '../../../shared/sla-types'
+import type { SLAIssue, SlaMetrics } from '../../../shared/sla-types'
 
 export function SLADashboard(): JSX.Element {
   const { activeProject } = useProject()
