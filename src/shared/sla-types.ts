@@ -31,11 +31,13 @@ export interface SLAIssue {
   reactionTimeMinutes: number | null
   reactionTargetMinutes: number | null
   reactionSLAMet: boolean | null
+  reactionStart: string | null
 
   resolutionTimeMinutes: number | null
   resolutionNetMinutes: number | null
   resolutionTargetMinutes: number | null
   resolutionSLAMet: boolean | null
+  resolutionStart: string | null
 
   reactionRemainingMinutes: number | null
   resolutionRemainingMinutes: number | null
@@ -56,6 +58,7 @@ export interface SLAReport {
   totalIssues: number
   issues: SLAIssue[]
   summary: SLASummary
+  excludeLunchBreak: boolean
 }
 
 export interface SLASummary {

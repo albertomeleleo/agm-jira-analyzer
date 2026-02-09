@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { getBusinessMinutesBetween, parseSLAForIssue } from '../src/main/sla-parser'
+import { getBusinessMinutesBetween } from '../src/shared/business-hours'
+import { parseSLAForIssue } from '../src/main/sla-parser'
 import type { JiraIssue } from '../src/shared/jira-types'
 import type { SLAGroup } from '../src/main/sla-parser' // Note: SLAGroup is exported from project-types but imported in parser
 

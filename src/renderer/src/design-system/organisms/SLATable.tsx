@@ -3,10 +3,13 @@ import { ChevronDown, ChevronRight, Clock, AlertTriangle, CheckCircle, Timer } f
 import { Badge } from '../atoms/Badge'
 import { SearchField } from '../molecules/SearchField'
 import { PRIORITY_TO_TIER } from '../molecules/SLAFilters'
+import { useRemainingTime } from '../../hooks/useRemainingTime'
+import { calculateRemainingMinutes } from '../../utils/sla-utils'
 import type { SLAIssue, SLASegment } from '../../../../shared/sla-types'
 
 interface SLATableProps {
   issues: SLAIssue[]
+  excludeLunchBreak: boolean
   className?: string
 }
 
@@ -52,12 +55,20 @@ function getRemainingVariant(minutes: number | null): 'success' | 'danger' | 'wa
   return 'success'
 }
 
-function RemainingBadge({ issue }: { issue: SLAIssue }): JSX.Element {
+function RemainingBadge({
+  issue,
+  now,
+  excludeLunchBreak
+}: {
+  issue: SLAIssue
+  now: Date
+  excludeLunchBreak: boolean
+}): JSX.Element {
   // Resolved issues: no remaining time to show
   if (issue.resolved !== null) return <span className="text-brand-text-sec text-sm">-</span>
 
-  // Use resolution remaining if available, otherwise reaction remaining
-  const remaining = issue.resolutionRemainingMinutes ?? issue.reactionRemainingMinutes ?? null
+  // Calculate real-time remaining minutes
+  const remaining = calculateRemainingMinutes(issue, now, excludeLunchBreak)
   const variant = getRemainingVariant(remaining)
 
   if (remaining === null) return <Badge variant="default">N/A</Badge>
@@ -87,7 +98,15 @@ function getSegmentVariant(segment: SLASegment): 'danger' | 'info' | 'default' {
   return 'default'
 }
 
-function IssueRow({ issue }: { issue: SLAIssue }): JSX.Element {
+function IssueRow({
+  issue,
+  now,
+  excludeLunchBreak
+}: {
+  issue: SLAIssue
+  now: Date
+  excludeLunchBreak: boolean
+}): JSX.Element {
   const [expanded, setExpanded] = useState(false)
 
   return (
@@ -136,7 +155,7 @@ function IssueRow({ issue }: { issue: SLAIssue }): JSX.Element {
           <SLABadge met={issue.resolutionSLAMet} />
         </td>
         <td className="px-4 py-3">
-          <RemainingBadge issue={issue} />
+          <RemainingBadge issue={issue} now={now} excludeLunchBreak={excludeLunchBreak} />
         </td>
       </tr>
       {expanded && (
@@ -220,10 +239,11 @@ function IssueRow({ issue }: { issue: SLAIssue }): JSX.Element {
   )
 }
 
-export function SLATable({ issues, className = '' }: SLATableProps): JSX.Element {
+export function SLATable({ issues, excludeLunchBreak, className = '' }: SLATableProps): JSX.Element {
   const [search, setSearch] = useState('')
   const [sortField, setSortField] = useState<'key' | 'priority' | 'reaction' | 'resolution' | 'remaining'>('key')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const now = useRemainingTime()
 
   const filtered = useMemo(() => {
     let result = issues
@@ -253,8 +273,8 @@ export function SLATable({ issues, className = '' }: SLATableProps): JSX.Element
           cmp = (a.resolutionNetMinutes ?? 0) - (b.resolutionNetMinutes ?? 0)
           break
         case 'remaining': {
-          const aRemaining = a.resolutionRemainingMinutes ?? a.reactionRemainingMinutes ?? Infinity
-          const bRemaining = b.resolutionRemainingMinutes ?? b.reactionRemainingMinutes ?? Infinity
+          const aRemaining = calculateRemainingMinutes(a, now, excludeLunchBreak) ?? Infinity
+          const bRemaining = calculateRemainingMinutes(b, now, excludeLunchBreak) ?? Infinity
           cmp = aRemaining - bRemaining
           break
         }
@@ -263,7 +283,7 @@ export function SLATable({ issues, className = '' }: SLATableProps): JSX.Element
     })
 
     return result
-  }, [issues, search, sortField, sortDir])
+  }, [issues, search, sortField, sortDir, now, excludeLunchBreak])
 
   const handleSort = (field: typeof sortField): void => {
     if (sortField === field) {
@@ -307,7 +327,7 @@ export function SLATable({ issues, className = '' }: SLATableProps): JSX.Element
           </thead>
           <tbody>
             {filtered.map((issue) => (
-              <IssueRow key={issue.key} issue={issue} />
+              <IssueRow key={issue.key} issue={issue} now={now} excludeLunchBreak={excludeLunchBreak} />
             ))}
             {filtered.length === 0 && (
               <tr>
