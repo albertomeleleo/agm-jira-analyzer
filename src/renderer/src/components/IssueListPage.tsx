@@ -1,13 +1,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Table } from 'lucide-react'
+import { Table, RefreshCw, Download, AlertTriangle, X } from 'lucide-react'
 import {
   H2,
+  Button,
   SLATable,
   SLAFilters,
-  FilterPresetBar
+  FilterPresetBar,
+  IssueImportModal
 } from '@design-system'
 import { useProject } from '../contexts/ProjectContext'
 import { usePageFilter } from '../contexts/FilterContext'
+import { useAutoRefresh } from '../hooks/useAutoRefresh'
 import { applyFilters } from '../../../shared/filter-utils'
 import type { SLAReport } from '../../../shared/sla-types'
 
@@ -24,30 +27,62 @@ export function IssueListPage(): JSX.Element {
     loadPreset
   } = usePageFilter('issues')
   const [report, setReport] = useState<SLAReport | null>(null)
+  const [importModalOpen, setImportModalOpen] = useState(false)
+  const [lastJql, setLastJql] = useState<string | null>(null)
+  const [syncError, setSyncError] = useState<string | null>(null)
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
+  const [syncing, setSyncing] = useState(false)
 
   const loadData = useCallback(async () => {
     if (!activeProject) return
     const cached = await window.api.getSLACache(activeProject.name)
     if (cached) setReport(cached)
+    const storedJql = await window.api.getLastJql(activeProject.name)
+    setLastJql(storedJql)
   }, [activeProject])
 
   useEffect(() => {
     loadData()
   }, [loadData])
 
+  const handleSync = useCallback(async () => {
+    if (!activeProject || syncing) return
+    if (!lastJql) {
+      setSyncError('No JQL query configured. Please use "Import Issues" to set up a query first.')
+      return
+    }
+    setSyncing(true)
+    setSyncError(null)
+    try {
+      const config = activeProject.config.jira
+      await window.api.jiraImportIssues(config, lastJql, activeProject.name)
+    } catch (err) {
+      setSyncError(`Import failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      setSyncing(false)
+      return
+    }
+    try {
+      await window.api.generateSLAReport(
+        activeProject.name,
+        activeProject.config.jiraProjectKey,
+        activeProject.config.slaGroups,
+        activeProject.config.excludeLunchBreak ?? false
+      )
+      await loadData()
+      setLastSyncTime(new Date())
+    } catch (err) {
+      setSyncError(`Report generation failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    } finally {
+      setSyncing(false)
+    }
+  }, [activeProject, lastJql, loadData, syncing])
+
+  useAutoRefresh(handleSync, lastJql)
+
   const filteredIssues = useMemo(() => {
     if (!report) return []
     return applyFilters(report.issues, filters)
   }, [report, filters])
-
-  const isFiltered = useMemo(() => {
-    return (
-      filters.issueTypes.size > 0 ||
-      filters.priorities.size > 0 ||
-      filters.statuses.size > 0 ||
-      filters.dateMode !== 'all'
-    )
-  }, [filters])
 
   if (!activeProject) {
     return (
@@ -65,9 +100,64 @@ export function IssueListPage(): JSX.Element {
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div>
-        <H2>Issue List - {activeProject.config.jiraProjectKey}</H2>
+      <div className="flex items-center justify-between">
+        <div>
+          <H2>Issue List - {activeProject.config.jiraProjectKey}</H2>
+          {report && (
+            <p className="text-sm text-brand-text-sec mt-1">
+              {filteredIssues.length} / {report.issues.length} issues
+            </p>
+          )}
+          {lastSyncTime && (
+            <p className="text-xs text-brand-text-sec mt-1">
+              Last sync: {lastSyncTime.toLocaleTimeString()}
+            </p>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="glass"
+            size="sm"
+            onClick={() => setImportModalOpen(true)}
+            icon={<Download size={16} />}
+          >
+            Import Issues
+          </Button>
+          <Button
+            variant="glass"
+            size="sm"
+            onClick={handleSync}
+            loading={syncing}
+            disabled={syncing || !lastJql}
+            icon={<RefreshCw size={16} />}
+            title={!lastJql ? 'Configure JQL query first using "Import Issues"' : 'Sync issues from Jira'}
+          >
+            Sync
+          </Button>
+        </div>
       </div>
+
+      {/* Sync error */}
+      {syncError && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20">
+          <AlertTriangle size={16} className="text-red-400 shrink-0" />
+          <p className="text-sm text-red-400 flex-1">{syncError}</p>
+          <button onClick={() => setSyncError(null)} className="text-red-400 hover:text-red-300">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Import Modal */}
+      <IssueImportModal
+        open={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onImportComplete={() => {
+          setImportModalOpen(false)
+          loadData()
+        }}
+        onJqlSaved={(jql: string) => setLastJql(jql)}
+      />
 
       {report ? (
         <>
@@ -88,13 +178,6 @@ export function IssueListPage(): JSX.Element {
             onChange={setFilters}
             onReset={resetFilters}
           />
-
-          {/* Filtered count indicator */}
-          {isFiltered && (
-            <p className="text-xs text-brand-text-sec">
-              Showing {filteredIssues.length} of {report.issues.length} issues
-            </p>
-          )}
 
           {/* Table */}
           <SLATable issues={filteredIssues} excludeLunchBreak={report.excludeLunchBreak} />

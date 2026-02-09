@@ -40,7 +40,7 @@ export function SLADashboard(): JSX.Element {
   const handleSync = useCallback(async () => {
     if (!activeProject || syncing) return
     if (!lastJql) {
-      setImportModalOpen(true)
+      setSyncError('No JQL query configured. Please use "Import Issues" to set up a query first.')
       return
     }
     setSyncing(true)
@@ -115,8 +115,9 @@ export function SLADashboard(): JSX.Element {
             size="sm"
             onClick={handleSync}
             loading={syncing}
-            disabled={syncing}
+            disabled={syncing || !lastJql}
             icon={<RefreshCw size={16} />}
+            title={!lastJql ? 'Configure JQL query first using "Import Issues"' : 'Sync issues from Jira'}
           >
             Sync
           </Button>

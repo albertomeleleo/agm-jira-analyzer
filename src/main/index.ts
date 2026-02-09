@@ -18,7 +18,8 @@ function createWindow(): BrowserWindow {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
-    ...(process.platform === 'darwin' && { titleBarStyle: 'hiddenInset' }),
+    // Use hidden titlebar on macOS for native look, standard titlebar on Windows/Linux
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false

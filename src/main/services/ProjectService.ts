@@ -87,14 +87,20 @@ export class ProjectService {
   // --- SLA Issues (imported from SLA Dashboard) ---
 
   saveSLAIssues(projectName: string, issues: JiraIssue[], lastJql?: string): void {
+    const filePath = this.getSLAIssuesPath(projectName)
+
+    // Preserve existing lastJql if not explicitly provided
+    const existing = storageService.readJsonFile<{ lastJql?: string }>(filePath)
+    const preservedJql = lastJql !== undefined ? lastJql : existing?.lastJql
+
     const data: { fetchedAt: string; issues: JiraIssue[]; lastJql?: string } = {
       fetchedAt: new Date().toISOString(),
       issues
     }
-    if (lastJql !== undefined) {
-      data.lastJql = lastJql
+    if (preservedJql !== undefined) {
+      data.lastJql = preservedJql
     }
-    storageService.writeJsonFile(this.getSLAIssuesPath(projectName), data)
+    storageService.writeJsonFile(filePath, data)
   }
 
   getSLAIssues(projectName: string): { fetchedAt: string; issues: JiraIssue[] } | null {
