@@ -120,8 +120,17 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps): JSX.Element 
       </nav>
 
       {/* Footer */}
-      <div className={`p-3 border-t border-white/10 ${collapsed ? 'flex justify-center' : ''}`}>
-        <ThemeToggle />
+      <div className={`border-t border-white/10 ${collapsed ? '' : 'space-y-2'}`}>
+        <div className={`p-3 ${collapsed ? 'flex justify-center' : ''}`}>
+          <ThemeToggle />
+        </div>
+        {!collapsed && (
+          <div className="px-3 pb-3">
+            <div className="text-xs text-brand-text-sec/60 text-center">
+              <span className="font-mono">v1.1.0</span>
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   )

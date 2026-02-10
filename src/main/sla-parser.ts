@@ -168,8 +168,7 @@ export function parseSLAForIssue(issue: JiraIssue, slaGroups: SLAGroup[], exclud
 
   if (resolutionStart) {
     let currentStatus = isTask ? 'Created' : (transitions.find((t) => isWorkStatus(t.toStatus))?.toStatus ?? 'Unknown')
-    console.log(`Checking if status "${status}" is a dependency status`);
-
+    
     let segmentStart = resolutionStart
     const endBound = resolutionEnd ?? new Date()
 
