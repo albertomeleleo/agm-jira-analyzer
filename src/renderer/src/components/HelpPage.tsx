@@ -55,7 +55,7 @@ export function HelpPage(): JSX.Element {
               {latestRelease.bugfixes.map((bug) => (
                 <div key={bug.id} className="pl-4 border-l-2 border-red-400/30">
                   <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="error">{bug.id}</Badge>
+                    <Badge variant="danger">{bug.id}</Badge>
                     <span className="text-sm font-medium text-brand-text-pri">{bug.title}</span>
                   </div>
                   <p className="text-sm text-brand-text-sec mb-1">
